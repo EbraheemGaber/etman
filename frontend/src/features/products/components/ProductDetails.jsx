@@ -5,7 +5,6 @@ import {
   Box,
   Button,
   IconButton,
-  Rating,
   Stack,
   Typography,
   useMediaQuery,
@@ -33,13 +32,6 @@ import {
 } from "../../cart/CartSlice";
 import { selectLoggedInUser } from "../../auth/AuthSlice";
 import {
-  fetchReviewsByProductIdAsync,
-  resetReviewFetchStatus,
-  selectReviewFetchStatus,
-  selectReviews,
-} from "../../review/ReviewSlice";
-import { Reviews } from "../../review/components/Reviews";
-import {
   createWishlistItemAsync,
   deleteWishlistItemByIdAsync,
   resetWishlistItemAddStatus,
@@ -63,10 +55,8 @@ export const ProductDetails = () => {
   const canHoverZoom = useMediaQuery("(hover: hover) and (pointer: fine)");
   const cartItems = useSelector(selectCartItems);
   const cartItemAddStatus = useSelector(selectCartItemAddStatus);
-  const reviews = useSelector(selectReviews);
   const wishlistItems = useSelector(selectWishlistItems);
   const productFetchStatus = useSelector(selectProductFetchStatus);
-  const reviewFetchStatus = useSelector(selectReviewFetchStatus);
   const wishlistItemAddStatus = useSelector(selectWishlistItemAddStatus);
   const wishlistItemDeleteStatus = useSelector(selectWishlistItemDeleteStatus);
   const [quantity, setQuantity] = useState(1);
@@ -81,13 +71,6 @@ export const ProductDetails = () => {
   );
   const isStorefrontCustomer =
     !loggedInUser?.isAdmin && !loggedInUser?.isSalesperson;
-  const totalReviews = reviews.length;
-  const averageRating = totalReviews
-    ? Math.ceil(
-        reviews.reduce((total, review) => total + review.rating, 0) /
-          totalReviews,
-      )
-    : 0;
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -96,7 +79,6 @@ export const ProductDetails = () => {
   useEffect(() => {
     if (id) {
       dispatch(fetchProductByIdAsync(id));
-      dispatch(fetchReviewsByProductIdAsync(id));
     }
   }, [id, dispatch]);
 
@@ -134,17 +116,10 @@ export const ProductDetails = () => {
     }
   }, [productFetchStatus]);
 
-  useEffect(() => {
-    if (reviewFetchStatus === "rejected") {
-      toast.error("تعذر تحميل تقييمات المنتج، يرجى المحاولة مرة أخرى");
-    }
-  }, [reviewFetchStatus]);
-
   useEffect(
     () => () => {
       dispatch(clearSelectedProduct());
       dispatch(resetProductFetchStatus());
-      dispatch(resetReviewFetchStatus());
       dispatch(resetWishlistItemDeleteStatus());
       dispatch(resetWishlistItemAddStatus());
       dispatch(resetCartItemAddStatus());
@@ -215,7 +190,6 @@ export const ProductDetails = () => {
             onClick={() => {
               if (id) {
                 dispatch(fetchProductByIdAsync(id));
-                dispatch(fetchReviewsByProductIdAsync(id));
               }
             }}
             sx={{ px: 4, py: 1.2, borderRadius: 2 }}
@@ -235,7 +209,7 @@ export const ProductDetails = () => {
             "& *:not(svg)": { fontFamily: "Cairo, Tahoma, sans-serif" },
           }}
         >
-          {(productFetchStatus === "pending" || reviewFetchStatus === "pending") && !product ? (
+          {productFetchStatus === "pending" && !product ? (
             <Stack
               width={is500 ? "35vh" : "25rem"}
               height="calc(100vh - 4rem)"
@@ -439,41 +413,26 @@ export const ProductDetails = () => {
                   >
                     {product?.title}
                   </Typography>
-                  <Stack
-                    direction="row"
-                    spacing={1}
-                    alignItems="center"
-                    flexWrap="wrap"
-                    sx={{ mt: 1.5 }}
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      mt: 1.5,
+                      color:
+                        !product?.isUnlimitedStock &&
+                        product?.stockQuantity <= 10
+                          ? "error.main"
+                          : "success.main",
+                      fontWeight: 600,
+                    }}
                   >
-                    <Rating value={averageRating} readOnly size="small" />
-                    <Typography variant="body2" color="text.secondary">
-                      (
-                      {totalReviews === 0
-                        ? "لا توجد تقييمات"
-                        : `${totalReviews} تقييم`}
-                      )
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color:
-                          !product?.isUnlimitedStock &&
-                          product?.stockQuantity <= 10
-                            ? "error.main"
-                            : "success.main",
-                        fontWeight: 600,
-                      }}
-                    >
-                      {product?.isUnlimitedStock
-                        ? "متوفر"
-                        : product?.stockQuantity <= 0
-                          ? "غير متوفر"
-                          : product?.stockQuantity <= 10
-                            ? `متبقي ${product.stockQuantity} فقط`
-                            : "متوفر"}
-                    </Typography>
-                  </Stack>
+                    {product?.isUnlimitedStock
+                      ? "متوفر"
+                      : product?.stockQuantity <= 0
+                        ? "غير متوفر"
+                        : product?.stockQuantity <= 10
+                          ? `متبقي ${product.stockQuantity} فقط`
+                          : "متوفر"}
+                  </Typography>
                   <Typography
                     sx={{
                       mt: 2,
@@ -522,18 +481,6 @@ export const ProductDetails = () => {
                       جنيه مصري
                     </Typography>
                   </Stack>
-                  {product?.priceIsEstimate && (
-                    <Typography
-                      sx={{
-                        color: "warning.dark",
-                        fontSize: ".9rem",
-                        fontWeight: 600,
-                        mb: 2,
-                      }}
-                    >
-                      {"السعر تقديري — يرجى التأكد قبل الشراء"}
-                    </Typography>
-                  )}
                   {!loggedInUser?.isAdmin && (
                     <>
                       <Stack
@@ -667,9 +614,6 @@ export const ProductDetails = () => {
                 </Stack>
               </Box>
 
-              <Stack width="100%" sx={{ mt: 4 }}>
-                <Reviews productId={id} averageRating={averageRating} />
-              </Stack>
             </Stack>
           )}
         </Stack>

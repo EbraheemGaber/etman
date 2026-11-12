@@ -434,7 +434,9 @@ export const Navbar=({isProductList=false})=> {
           aria-label="Storefront navigation"
           showLabels
           value={
-            ['/','/orders','/wishlist','/cart'].includes(location.pathname)
+            location.pathname==='/checkout'
+              ? '/cart'
+              : ['/','/orders','/wishlist','/cart'].includes(location.pathname)
               ? location.pathname
               : location.pathname.startsWith('/profile')
                 ? 'account'

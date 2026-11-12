@@ -1,5 +1,5 @@
 import { Box, Button, Grid, IconButton, Paper, Stack, TextField, Typography, useMediaQuery, useTheme } from '@mui/material'
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import {useDispatch,useSelector} from 'react-redux'
 import { createWishlistItemAsync, deleteWishlistItemByIdAsync, resetWishlistFetchStatus, resetWishlistItemAddStatus, resetWishlistItemDeleteStatus, resetWishlistItemUpdateStatus, selectWishlistFetchStatus, selectWishlistItemAddStatus, selectWishlistItemDeleteStatus, selectWishlistItemUpdateStatus, selectWishlistItems, updateWishlistItemByIdAsync } from '../WishlistSlice'
 import {ProductCard} from '../../products/components/ProductCard'
@@ -56,10 +56,10 @@ export const Wishlist = () => {
 
   useEffect(()=>{
     if(wishlistItemAddStatus==='fulfilled'){
-        toast.success("Product added to wishlist")
+        toast.success("تمت إضافة المنتج إلى قائمة المفضلة")
     }
     else if(wishlistItemAddStatus==='rejected'){
-        toast.error("Error adding product to wishlist, please try again later")
+        toast.error("تعذرت إضافة المنتج إلى قائمة المفضلة، يرجى المحاولة لاحقًا")
     }
 
 
@@ -67,10 +67,10 @@ export const Wishlist = () => {
 
   useEffect(()=>{
     if(wishlistItemDeleteStatus==='fulfilled'){
-        toast.success("Product removed from wishlist")
+        toast.success("تمت إزالة المنتج من قائمة المفضلة")
     }
     else if(wishlistItemDeleteStatus==='rejected'){
-        toast.error("Error removing product from wishlist, please try again later")
+        toast.error("تعذرت إزالة المنتج من قائمة المفضلة، يرجى المحاولة لاحقًا")
     }
 
   },[wishlistItemDeleteStatus])
@@ -78,10 +78,10 @@ export const Wishlist = () => {
 
   useEffect(()=>{
     if(wishlistItemUpdateStatus==='fulfilled'){
-      toast.success("Wislist item updated")
+      toast.success("تم تحديث الملاحظة")
     }
     else if(wishlistItemUpdateStatus==='rejected'){
-      toast.error("Error updating wishlist item")
+      toast.error("تعذر تحديث الملاحظة")
     }
 
     setEditIndex(-1)
@@ -92,11 +92,11 @@ export const Wishlist = () => {
   useEffect(()=>{
 
     if(cartItemAddStatus==='fulfilled'){
-        toast.success("Product added to cart")
+        toast.success("تمت إضافة المنتج إلى السلة")
     }
 
     else if(cartItemAddStatus==='rejected'){
-        toast.error('Error adding product to cart, please try again later')
+        toast.error('تعذرت إضافة المنتج إلى السلة، يرجى المحاولة لاحقًا')
     }
 
 },[cartItemAddStatus])
@@ -104,7 +104,7 @@ export const Wishlist = () => {
 
   useEffect(()=>{
     if(wishlistFetchStatus==='rejected'){
-      toast.error("Error fetching wishlist, please try again later")
+      toast.error("تعذر تحميل قائمة المفضلة، يرجى المحاولة لاحقًا")
     }
   },[wishlistFetchStatus])
 
@@ -136,7 +136,7 @@ export const Wishlist = () => {
 
   return (
     // parent
-    <Stack justifyContent={'flex-start'} mt={is480?3:5} mb={'14rem'} alignItems={'center'}>
+    <Stack dir="rtl" lang="ar" justifyContent={'flex-start'} mt={is480?3:5} mb={'14rem'} alignItems={'center'}>
         {
           wishlistFetchStatus==='pending'?
           <Stack width={is480?'auto':'25rem'} height={'calc(100vh - 4rem)'} justifyContent={'center'} alignItems={'center'}>
@@ -149,20 +149,20 @@ export const Wishlist = () => {
             {/* heading area and back button */}
             <Stack alignSelf={'flex-start'} flexDirection={'row'} columnGap={1} justifyContent={'center'} alignItems={'center'}>
                 <motion.div whileHover={{x:-5}}>
-                  <IconButton component={Link} to={'/'}><ArrowBackIcon fontSize={is480?'medium':'large'}/></IconButton>
+                  <IconButton component={Link} to={'/'} aria-label="العودة إلى الرئيسية"><ArrowForwardIcon fontSize={is480?'medium':'large'}/></IconButton>
                 </motion.div>
-                <Typography variant='h4' fontWeight={500}>{'Your wishlist'}</Typography>
+                <Typography variant='h4' fontWeight={500}>{'قائمة المفضلة'}</Typography>
             </Stack>
 
             {/* product grid */}
             <Stack >
 
               {
-                !wishlistFetchStatus==='pending' && wishlistItems?.length===0?(
+                wishlistFetchStatus!=='pending' && wishlistItems?.length===0?(
                   // empty wishlist animation
                   <Stack minHeight={'60vh'} width={is642?'auto':'40rem'} justifySelf={'center'}  alignSelf={'center'} justifyContent={'center'} alignItems={'center'}>
                     <Lottie animationData={emptyWishlistAnimation}/>
-                    <Typography variant='h6' fontWeight={300}>{'You have no items in your wishlist'}</Typography>
+                    <Typography variant='h6' fontWeight={300}>{'لا توجد منتجات في قائمة المفضلة'}</Typography>
                   </Stack>
                 ):
                 // wishlist grid
@@ -177,8 +177,8 @@ export const Wishlist = () => {
 
                           {/* note heading and icon */}
                           <Stack flexDirection={'row'} alignItems={'center'}>
-                            <Typography variant='h6' fontWeight={400}>{'Note'}</Typography>
-                            <IconButton onClick={()=>handleEdit(index)} ><EditOutlinedIcon/></IconButton>
+                            <Typography variant='h6' fontWeight={400}>{'ملاحظة'}</Typography>
+                            <IconButton aria-label="تعديل الملاحظة" onClick={()=>handleEdit(index)} ><EditOutlinedIcon/></IconButton>
                           </Stack>
 
                           {
@@ -186,23 +186,23 @@ export const Wishlist = () => {
 
                               <Stack rowGap={2}>
                                 
-                                <TextField multiline rows={4} value={editValue} onChange={(e)=>setEditValue(e.target.value)}/>
+                                <TextField multiline rows={4} value={editValue} onChange={(e)=>setEditValue(e.target.value)} inputProps={{dir:'rtl'}} sx={{'& .MuiInputBase-input':{textAlign:'right'}}}/>
                                 
                                 <Stack flexDirection={'row'} alignSelf={'flex-end'} columnGap={1}>
-                                    <Button onClick={()=>handleNoteUpdate(item._id)} size='small' variant='contained'>{'Update'}</Button>
-                                    <Button onClick={()=>setEditIndex(-1)} size='small' variant='outlined' color='error'>{'Cancel'}</Button>
+                                    <Button onClick={()=>handleNoteUpdate(item._id)} size='small' variant='contained'>{'حفظ'}</Button>
+                                    <Button onClick={()=>setEditIndex(-1)} size='small' variant='outlined' color='error'>{'إلغاء'}</Button>
                                 </Stack>
 
                               </Stack>
                             ):
                             <Box>
-                              <Typography sx={{wordWrap:"break-word",color:item.note?'text.primary':'GrayText'}}>{item.note?item.note:"Add a custom note here"}</Typography>
+                              <Typography sx={{wordWrap:"break-word",color:item.note?'text.primary':'GrayText'}}>{item.note?item.note:"أضف ملاحظة خاصة لهذا المنتج"}</Typography>
                             </Box>
                           }
 
                           {
                             cartItems.some((cartItem)=>cartItem.product._id===item.product._id)?
-                            <Button sx={{mt:4}} size='small' variant='outlined' component={Link} to={'/cart'}>{'Already in cart'}</Button>:<Button sx={{mt:4}} size='small' onClick={()=>handleAddToCart(item.product._id)} variant='outlined'>{'Add To Cart'}</Button>
+                            <Button sx={{mt:4}} size='small' variant='outlined' component={Link} to={'/cart'}>{'موجود بالفعل في السلة'}</Button>:<Button sx={{mt:4}} size='small' onClick={()=>handleAddToCart(item.product._id)} variant='outlined'>{'أضف إلى السلة'}</Button>
                           }
                           
                           

@@ -7,7 +7,7 @@ import Lottie from 'lottie-react'
 
 export const NotFoundPage = () => {
   return (
-    <Stack justifyContent={'center'} alignItems={'center'} height={'100vh'}>
+    <Stack justifyContent={'center'} alignItems={'center'} flexGrow={1}>
 
         <Stack rowGap={1} justifyContent={'center'} alignItems={'center'}>
             

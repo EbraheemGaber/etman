@@ -475,7 +475,7 @@ export const AdminStatistics=()=>{
   const currencyFormat=(value)=>`EGP ${formatNumber(value)}`
 
   return (
-    <Box sx={{minHeight:'calc(100vh - 68px)',bgcolor:'#f6f7f9',py:{xs:2.5,md:4},px:{xs:1.5,sm:3,lg:5}}}>
+    <Box sx={{flexGrow:1,bgcolor:'#f6f7f9',py:{xs:2.5,md:4},px:{xs:1.5,sm:3,lg:5}}}>
       <Stack maxWidth={1500} mx="auto" spacing={{xs:2.5,md:3}}>
         <Stack direction={{xs:'column',sm:'row'}} justifyContent="space-between" alignItems={{xs:'flex-start',sm:'flex-end'}} spacing={1}>
           <Box>

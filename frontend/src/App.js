@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useSelector } from 'react-redux';
+import { Box } from '@mui/material';
 import { QueryClientProvider } from '@tanstack/react-query';
 import {
   Navigate, Outlet, useLocation,
@@ -21,6 +22,7 @@ import { AdminSalespeoplePage } from './pages/AdminSalespeoplePage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { WhatsAppFloatButton } from './components/WhatsAppFloatButton';
 import { queryClient } from './config/queryClient';
+import { Footer } from './features/footer/Footer';
 
 function AppLayout() {
   const location = useLocation();
@@ -30,12 +32,20 @@ function AppLayout() {
   const isSalesperson=Boolean(loggedInUser?.isSalesperson)
   const isAuthPage=['/signup','/login','/verify-otp','/forgot-password','/logout'].includes(location.pathname)
     || location.pathname.startsWith('/reset-password/')
+  const isOrderSuccessPage=location.pathname.startsWith('/order-success/')
+  const isOrdersPage=location.pathname==='/orders'
+  const isCartPage=location.pathname==='/cart'
+  const isCheckoutPage=location.pathname==='/checkout'
+  const isProductDetailsPage=location.pathname.startsWith('/product-details/')
 
   return (
-    <>
-      <Outlet />
+    <Box sx={{minHeight:'100vh',display:'flex',flexDirection:'column'}}>
+      <Box component="main" sx={{flex:'1 0 auto',display:'flex',flexDirection:'column'}}>
+        <Outlet />
+      </Box>
+      {!isAuthPage && !isOrderSuccessPage && !isOrdersPage && !isCartPage && !isCheckoutPage && !isProductDetailsPage && <Footer/>}
       {isAuthChecked && !isAuthPage && !isAdmin && !isSalesperson && <WhatsAppFloatButton/>}
-    </>
+    </Box>
   );
 }
 

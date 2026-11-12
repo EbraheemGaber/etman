@@ -22,7 +22,6 @@ export const CategoryHome=()=>{
   const [productsByCategory,setProductsByCategory]=useState({})
   const [error,setError]=useState('')
   const [loading,setLoading]=useState(false)
-
   useEffect(()=>{
     if(categoryStatus==='idle'){
       dispatch(fetchAllCategoriesAsync())
@@ -80,9 +79,18 @@ export const CategoryHome=()=>{
       )}
       {error && <Alert severity="error" sx={{mx:2}}>{error}</Alert>}
       {!!categories.length && (
-        <Box component="nav" aria-label={"Shop by category"}>
+        <Box component="nav" aria-label="تسوق حسب الفئة" dir="rtl" lang="ar">
+          <Stack spacing={.5} px={{xs:2,md:4}} mb={1}>
+            <Typography sx={{color:'#a34a4e',fontSize:12,fontWeight:800,letterSpacing:.5}}>
+              {'تشكيلة عتمان جروب'}
+            </Typography>
+            <Typography component="h2" sx={{color:'#2d2021',fontSize:{xs:22,sm:28},fontWeight:800}}>
+              {'تسوق حسب الفئة'}
+            </Typography>
+          </Stack>
           <Box sx={{
             overflow:'hidden',
+            direction:'ltr',
             px:{xs:2,md:4},
             pb:1,
             '@media (prefers-reduced-motion: reduce)':{
@@ -96,9 +104,11 @@ export const CategoryHome=()=>{
           }}>
             <Box
               className="category-rail-track"
+              dir="ltr"
               sx={{
                 display:'flex',
                 width:'max-content',
+                direction:'ltr',
                 animation:'category-rail-scroll 90s linear infinite',
                 '@keyframes category-rail-scroll':{
                   from:{transform:'translateX(0)'},
@@ -111,6 +121,7 @@ export const CategoryHome=()=>{
                 <Box
                   key={isDuplicate?'duplicate':'original'}
                   aria-hidden={isDuplicate || undefined}
+                  dir="ltr"
                   sx={{
                     display:'flex',
                     gap:1.5,
@@ -126,16 +137,17 @@ export const CategoryHome=()=>{
                       <ButtonBase
                         key={`${category._id}-${isDuplicate?'duplicate':'original'}`}
                         component={Link}
+                        dir="rtl"
                         to={`/category/${category._id}`}
-                        aria-label={`${'Shop'} ${category.name}`}
+                        aria-label={`تسوق ${category.name}`}
                         tabIndex={isDuplicate?-1:undefined}
                         sx={{
                           width:{xs:112,sm:124},
                           display:'flex',
                           flexDirection:'column',
                           gap:1,
-                          borderRadius:2,
-                          p:0.5,
+                          p:.5,
+                          borderRadius:2.5,
                           color:'text.primary',
                           textAlign:'center',
                           '&:hover .category-image':{transform:'translateY(-2px)',boxShadow:'0 5px 14px rgba(0,0,0,.1)'}
@@ -151,7 +163,7 @@ export const CategoryHome=()=>{
                             justifyContent:'center',
                             overflow:'hidden',
                             borderRadius:2,
-                            bgcolor:'#f0f1f0',
+                            bgcolor:'#fff7f7',
                             transition:'transform 180ms ease, box-shadow 180ms ease'
                           }}
                         >
@@ -159,14 +171,14 @@ export const CategoryHome=()=>{
                             <Box
                               component="img"
                               src={thumbnail}
-                              alt={isDuplicate?'':`${category.name} product`}
+                              alt={isDuplicate?'':`${category.name} من المنتجات`}
                               loading="lazy"
                               sx={{width:'88%',height:'88%',objectFit:'contain',mixBlendMode:'multiply'}}
                             />
                           ) : loading ? (
-                            <CircularProgress size={22} aria-label={`${'Loading'} ${category.name} ${'image'}`} />
+                            <CircularProgress size={22} aria-label={`جارٍ تحميل صورة ${category.name}`} />
                           ) : (
-                            <Typography aria-hidden="true" sx={{color:'text.secondary',fontSize:28,fontWeight:700}}>
+                            <Typography aria-hidden="true" sx={{color:'#c62828',fontSize:28,fontWeight:800}}>
                               {category.name?.charAt(0)}
                             </Typography>
                           )}
@@ -178,6 +190,7 @@ export const CategoryHome=()=>{
                             maxWidth:'100%',
                             color:'text.primary',
                             fontSize:12,
+                            fontWeight:700,
                             lineHeight:1.3,
                             display:'-webkit-box',
                             WebkitBoxOrient:'vertical',
@@ -213,9 +226,9 @@ export const CategoryHome=()=>{
             transition={{duration:prefersReducedMotion?0:.35,delay:prefersReducedMotion?0:Math.min(index*0.06,0.5)}}
           >
             <Stack direction="row" justifyContent="space-between" alignItems="center" px={{xs:2,md:4}} mb={1}>
-              <Typography variant="h5" fontWeight={600}>{category.name}</Typography>
+              <Typography variant="h5" fontWeight={800} dir="rtl">{category.name}</Typography>
               <Button component={Link} to={`/category/${category._id}`} variant="outlined" size="small">
-                View all
+                {'عرض الكل'}
               </Button>
             </Stack>
 
@@ -241,7 +254,7 @@ export const CategoryHome=()=>{
                     delay:prefersReducedMotion?0:Math.min(productIndex*.07,.35),
                     ease:'easeOut'
                   }}
-                  sx={{width:{xs:'100%',sm:250},minWidth:0,flexShrink:0}}
+                  sx={{width:{xs:'100%',sm:264},minWidth:0,flexShrink:0}}
                 >
                   <ProductCard
                     id={product._id}

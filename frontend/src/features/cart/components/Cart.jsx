@@ -65,6 +65,7 @@ export const Cart = ({ checkout, arabic: arabicOverride }) => {
                     justifyContent: 'center',
                     px: 2,
                     py: 4,
+                    pb: { xs: 'calc(64px + env(safe-area-inset-bottom) + 1rem)', sm: 4 },
                     backgroundColor: '#f3f4f7',
                     ...(arabic ? { fontFamily: 'Cairo, Tahoma, sans-serif', '& *:not(svg)': { fontFamily: 'Cairo, Tahoma, sans-serif' } } : {})
                 }}
@@ -102,6 +103,7 @@ export const Cart = ({ checkout, arabic: arabicOverride }) => {
                 minHeight: '70vh',
                 backgroundColor: '#f3f4f7',
                 py: { xs: 2, md: 4 },
+                pb: { xs: 'calc(64px + env(safe-area-inset-bottom) + 1rem)', md: 4 },
                 px: { xs: 1.5, md: 3 },
                 ...(arabic ? { fontFamily: 'Cairo, Tahoma, sans-serif', '& *:not(svg)': { fontFamily: 'Cairo, Tahoma, sans-serif' } } : {})
             }}
@@ -125,7 +127,6 @@ export const Cart = ({ checkout, arabic: arabicOverride }) => {
                             sx={{ backgroundColor: '#fff', fontWeight: 600, ...(arabic ? { direction: 'rtl' } : {}) }}
                         />
                     </Stack>
-
                     <Paper elevation={0} sx={{ overflow: 'hidden', borderRadius: arabic ? 0 : 3, backgroundColor: '#fff' }}>
                         {items.map((item, index) => (
                             <React.Fragment key={item._id}>

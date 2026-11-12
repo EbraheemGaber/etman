@@ -1,17 +1,16 @@
-import { Box, Card, Checkbox, Chip, Stack, Typography } from '@mui/material'
+import { Box, Card, Checkbox, Chip, Stack, Typography, useMediaQuery } from '@mui/material'
+import { LoadingButton } from '@mui/lab'
 import React from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import FavoriteBorder from '@mui/icons-material/FavoriteBorder';
-import Favorite from '@mui/icons-material/Favorite';
-import LayersOutlinedIcon from '@mui/icons-material/LayersOutlined'
-import { useDispatch, useSelector } from 'react-redux';
-import { selectWishlistItems } from '../../wishlist/WishlistSlice';
-import { selectLoggedInUser } from '../../auth/AuthSlice';
-import { addToCartAsync,selectCartItems } from '../../cart/CartSlice';
-import {motion} from 'framer-motion'
-import AddShoppingCartOutlinedIcon from '@mui/icons-material/AddShoppingCartOutlined';
+import FavoriteBorder from '@mui/icons-material/FavoriteBorder'
+import Favorite from '@mui/icons-material/Favorite'
+import { useDispatch, useSelector } from 'react-redux'
+import { selectWishlistItems } from '../../wishlist/WishlistSlice'
+import { selectLoggedInUser } from '../../auth/AuthSlice'
+import { addToCartAsync,selectCartItems } from '../../cart/CartSlice'
+import AddShoppingCartOutlinedIcon from '@mui/icons-material/AddShoppingCartOutlined'
 
-const formatPrice=(value)=>Number(value || 0).toLocaleString(undefined,{
+const formatPrice=(value)=>Number(value || 0).toLocaleString('en-EG',{
     minimumFractionDigits:2,
     maximumFractionDigits:2
 })
@@ -20,7 +19,6 @@ export const ProductCard = ({
     id,
     title,
     price,
-    priceIsEstimate=false,
     discountPercentage=0,
     thumbnail,
     brand,
@@ -37,11 +35,14 @@ export const ProductCard = ({
     const loggedInUser=useSelector(selectLoggedInUser)
     const cartItems=useSelector(selectCartItems)
     const dispatch=useDispatch()
+    const canHover=useMediaQuery('(hover: hover) and (pointer: fine)')
 
     const isProductAlreadyInWishlist=wishlistItems.some((item)=>item.product._id===id)
     const isProductAlreadyInCart=cartItems.some((item)=>item.product._id===id)
     const discount=Math.min(Math.max(Number(discountPercentage) || 0,0),100)
     const discountedPrice=Number(price || 0)*(1-discount/100)
+    const isAvailable=isUnlimitedStock || stockQuantity>0
+    const [isAddingToCart,setIsAddingToCart]=React.useState(false)
 
     const handleAddToCart=(event)=>{
         event.stopPropagation()
@@ -49,7 +50,9 @@ export const ProductCard = ({
             navigate('/login',{state:{from:location}})
             return
         }
+        setIsAddingToCart(true)
         dispatch(addToCartAsync({user:loggedInUser?._id,product:id}))
+            .finally(()=>setIsAddingToCart(false))
     }
 
     const handleWishlistChange=(event)=>{
@@ -64,67 +67,101 @@ export const ProductCard = ({
     return (
         <Card
             variant="outlined"
-            onClick={()=>navigate(`/product-details/${id}`)}
+            component="article"
+            dir="rtl"
+            lang="ar"
+            onClick={(event)=>{
+                if(event.target.closest('button, a, input')) return
+                navigate(`/product-details/${id}`)
+            }}
             sx={{
                 position:'relative',
                 display:'flex',
                 flexDirection:'column',
-                width:isGridCard?{xs:'100%',sm:250}:250,
+                width:isGridCard?{xs:'100%',sm:264}:250,
                 minWidth:isGridCard?0:undefined,
-                flex:isGridCard?{xs:'auto',sm:'0 0 250px'}:'0 0 250px',
-                height:340,
-                p:isGridCard?{xs:1,sm:2}:2,
-                borderColor:'divider',
-                borderRadius:3,
+                flex:isGridCard?{xs:'auto',sm:'0 0 264px'}:'0 0 250px',
+                height:isGridCard?405:375,
+                p:{xs:1.15,sm:1.4},
+                borderColor:'rgba(198,40,40,.16)',
+                borderRadius:3.5,
                 bgcolor:'#fff',
-                boxShadow:'none',
+                boxShadow:'0 8px 26px rgba(135,25,30,.06)',
                 cursor:'pointer',
-                transition:'box-shadow 180ms ease, transform 180ms ease',
-                '&:hover':{boxShadow:'0 8px 24px rgba(0,0,0,.1)',transform:'translateY(-2px)'}
+                fontFamily:'Cairo, Tahoma, sans-serif',
+                '& *:not(svg)':{fontFamily:'Cairo, Tahoma, sans-serif'},
+                transition:'box-shadow 220ms ease, transform 220ms ease, border-color 220ms ease',
+                ...(canHover?{
+                    '&:hover':{
+                        boxShadow:'0 18px 38px rgba(135,25,30,.15)',
+                        transform:'translateY(-4px)',
+                        borderColor:'rgba(198,40,40,.38)'
+                    },
+                    '&:hover .product-card-image':{transform:'scale(1.045)'}
+                }:{})
             }}
         >
             {!isAdminCard && !isWishlistCard && (
-                <motion.div
-                    style={{position:'absolute',top:7,left:7,zIndex:1}}
-                >
-                    <Checkbox
-                        aria-label={isProductAlreadyInWishlist?'Remove from wishlist':'Add to wishlist'}
-                        onClick={(event)=>event.stopPropagation()}
-                        checked={isProductAlreadyInWishlist}
-                        onChange={handleWishlistChange}
-                        icon={<FavoriteBorder sx={{fontSize:20,color:'#8b8b94'}} />}
-                        checkedIcon={<Favorite sx={{fontSize:20,color:'primary.main'}} />}
-                        sx={{p:1}}
-                    />
-                </motion.div>
-            )}
-
-            {!isAdminCard && !isWishlistCard && (
-                <LayersOutlinedIcon
-                    aria-hidden="true"
-                    sx={{position:'absolute',top:16,right:16,fontSize:19,color:'#92929a'}}
+                <Checkbox
+                    aria-label={isProductAlreadyInWishlist?'إزالة من قائمة الأمنيات':'إضافة إلى قائمة الأمنيات'}
+                    onClick={(event)=>event.stopPropagation()}
+                    checked={isProductAlreadyInWishlist}
+                    onChange={handleWishlistChange}
+                    icon={<FavoriteBorder sx={{fontSize:20,color:'#777078'}} />}
+                    checkedIcon={<Favorite sx={{fontSize:20,color:'#c62828'}} />}
+                    sx={{
+                        position:'absolute',
+                        top:15,
+                        left:15,
+                        zIndex:1,
+                        p:.8,
+                        bgcolor:'rgba(255,255,255,.92)',
+                        borderRadius:'50%',
+                        '&:hover':{bgcolor:'#fff'}
+                    }}
                 />
             )}
 
-            <Box sx={{height:isGridCard?{xs:115,sm:135}:135,display:'flex',alignItems:'center',justifyContent:'center',mb:.5,mt:.5}}>
+            <Box
+                sx={{
+                    position:'relative',
+                    height:isGridCard?190:175,
+                    flexShrink:0,
+                    display:'flex',
+                    alignItems:'center',
+                    justifyContent:'center',
+                    overflow:'hidden',
+                    borderRadius:2.5,
+                    bgcolor:'#fff7f7',
+                    backgroundImage:'radial-gradient(circle at 50% 42%,#fff 0%,#fffafa 62%,#f9eded 100%)'
+                }}
+            >
                 <Box
+                    className="product-card-image"
                     component="img"
                     src={thumbnail}
-                    alt={`${title} photo`}
-                    sx={{width:'100%',height:'100%',objectFit:'contain'}}
+                    alt={title}
+                    loading="lazy"
+                    sx={{
+                        width:'88%',
+                        height:'88%',
+                        objectFit:'contain',
+                        mixBlendMode:'multiply',
+                        transition:'transform 300ms ease'
+                    }}
                 />
             </Box>
 
-            <Stack flex={1} spacing={.75} justifyContent="space-between" alignItems="stretch">
-                <Box sx={{minHeight:42}}>
+            <Stack flex={1} spacing={1.1} justifyContent="space-between" alignItems="stretch" sx={{pt:1.4,px:.3}}>
+                <Box sx={{minHeight:50}}>
                     <Typography
-                        variant="body2"
                         title={title}
                         sx={{
-                            color:'text.primary',
-                            fontWeight:600,
-                            textAlign:'center',
-                            lineHeight:1.4,
+                            color:'#251e1f',
+                            fontSize:15,
+                            fontWeight:800,
+                            textAlign:'right',
+                            lineHeight:1.55,
                             display:'-webkit-box',
                             WebkitBoxOrient:'vertical',
                             WebkitLineClamp:2,
@@ -133,41 +170,38 @@ export const ProductCard = ({
                     >
                         {title}
                     </Typography>
+                    <Typography sx={{mt:.2,color:'#8b8181',fontSize:11.5,fontWeight:600}}>
+                        {brand==='Etman Group'?'عتمان جروب':brand}
+                    </Typography>
                 </Box>
 
-                <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{minHeight:28}}>
-                    <Typography
-                        component="span"
-                        sx={{
-                            px:1,
-                            py:.25,
-                            border:'1px solid',
-                            borderColor:isUnlimitedStock || stockQuantity>0?'success.light':'error.light',
-                            borderRadius:5,
-                            color:isUnlimitedStock || stockQuantity>0?'success.main':'error.main',
-                            fontSize:11,
-                            lineHeight:1.2
-                        }}
-                    >
-                        {isUnlimitedStock?'In stock':stockQuantity>0?'Available':'Out of stock'}
-                    </Typography>
-                    <Stack alignItems="flex-end" spacing={.25}>
-                        <Typography component="span" sx={{color:'text.primary',fontSize:15,fontWeight:700,lineHeight:1.2}}>
-                            EGP {formatPrice(discountedPrice)}
+                <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{minHeight:44}}>
+                    <Stack spacing={.35} alignItems="flex-start">
+                        <Typography sx={{color:'#7a6d6c',fontSize:10.5,fontWeight:600}}>
+                            {'السعر'}
                         </Typography>
-                        {priceIsEstimate && <Typography component="span" sx={{color:'warning.dark',fontSize:10,lineHeight:1.2}}>{'Estimated price'}</Typography>}
+                        <Typography component="span" dir="ltr" sx={{color:'#c62828',fontSize:17,fontWeight:900,lineHeight:1.2}}>
+                            {formatPrice(discountedPrice)} <Box component="span" sx={{fontSize:11,fontWeight:700}}>{'ج.م'}</Box>
+                        </Typography>
                     </Stack>
-                </Stack>
-
-                <Stack direction="row" spacing={.75} justifyContent="center" sx={{minHeight:24,overflow:'hidden'}}>
-                    {brand && <Chip label={brand} size="small" variant="outlined" sx={{height:23,maxWidth:100,fontSize:11,borderRadius:1,borderColor:'#e2e2e2',color:'#62626a'}} />}
+                    <Chip
+                        label={isAvailable?'متوفر':'غير متوفر'}
+                        size="small"
+                        sx={{
+                            height:25,
+                            bgcolor:isAvailable?'#edf5ef':'#fff0ef',
+                            color:isAvailable?'#2f6d43':'#a32e32',
+                            fontSize:11,
+                            fontWeight:800
+                        }}
+                    />
                 </Stack>
 
                 {!isWishlistCard && !isAdminCard && (
-                    <Box
-                        component="button"
+                    <LoadingButton
                         type="button"
-                        aria-label={isProductAlreadyInCart?'View cart':'Add to cart'}
+                        variant="contained"
+                        aria-label={isProductAlreadyInCart?'عرض السلة':'إضافة إلى السلة'}
                         onClick={(event)=>{
                             event.stopPropagation()
                             if(!loggedInUser?.isVerified){
@@ -177,32 +211,32 @@ export const ProductCard = ({
                             if(isProductAlreadyInCart) navigate('/cart')
                             else handleAddToCart(event)
                         }}
-                        disabled={!isProductAlreadyInCart && !isUnlimitedStock && stockQuantity<=0}
+                        disabled={!isProductAlreadyInCart && !isAvailable}
+                        loading={isAddingToCart}
                         sx={{
                             width:'100%',
-                            minHeight:40,
-                            display:'flex',
-                            alignItems:'center',
-                            justifyContent:'center',
-                            gap:.75,
-                            border:0,
-                            borderRadius:1.5,
-                            bgcolor:'primary.main',
+                            minHeight:43,
+                            border:'1px solid #c62828',
+                            borderRadius:1.8,
+                            bgcolor:'#c62828',
                             color:'#fff',
                             fontFamily:'inherit',
-                            fontSize:14,
-                            fontWeight:700,
-                            cursor:'pointer',
-                            boxShadow:'0 3px 7px rgba(0,0,0,.12)',
-                            '&:hover':{bgcolor:'primary.dark'},
-                            '&:disabled':{bgcolor:'#bdbdbd',cursor:'not-allowed'}
+                            fontSize:13,
+                            fontWeight:800,
+                            boxShadow:'0 5px 14px rgba(198,40,40,.16)',
+                            transition:'background-color 180ms ease,box-shadow 180ms ease,transform 180ms ease',
+                            ...(canHover?{
+                                '&:hover':{bgcolor:'#a3151b',borderColor:'#a3151b',transform:'translateY(-1px)',boxShadow:'0 7px 16px rgba(198,40,40,.22)'}
+                            }:{}),
+                            '&:disabled':{bgcolor:'#bdb8b7',borderColor:'#bdb8b7',color:'#fff'}
                         }}
                     >
-                        {isProductAlreadyInCart?'View cart':'Add to cart'}
-                        <AddShoppingCartOutlinedIcon sx={{fontSize:18}}/>
-                    </Box>
+                        <Stack direction="row" spacing={.8} alignItems="center">
+                            {isProductAlreadyInCart?'عرض السلة':'أضف إلى السلة'}
+                            <AddShoppingCartOutlinedIcon sx={{fontSize:18}}/>
+                        </Stack>
+                    </LoadingButton>
                 )}
-
             </Stack>
         </Card>
     )

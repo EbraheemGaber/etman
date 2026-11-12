@@ -63,7 +63,7 @@ export const Signup = () => {
   return (
     <Stack
       width="100%"
-      minHeight="100vh"
+      flexGrow={1}
       justifyContent="center"
       alignItems="center"
       dir="rtl"

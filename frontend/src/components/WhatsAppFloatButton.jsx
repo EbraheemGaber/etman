@@ -24,7 +24,7 @@ export const WhatsAppFloatButton=()=>{
       sx={{
         position:'fixed',
         right:{xs:16,sm:24},
-        bottom:{xs:32,sm:38},
+        bottom:{xs:88,sm:72},
         zIndex:theme.zIndex.tooltip,
         display:'flex',
         alignItems:'center',

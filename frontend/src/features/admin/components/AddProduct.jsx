@@ -2,11 +2,12 @@ import React, { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { Link, useNavigate} from 'react-router-dom'
 import { addProductAsync, resetProductAddStatus, selectProductAddStatus,updateProductByIdAsync } from '../../products/ProductSlice'
-import { Button, FormControl, InputLabel, MenuItem, Select, Stack, TextField, Typography, useMediaQuery, useTheme } from '@mui/material'
+import { Button, Checkbox, FormControl, FormControlLabel, InputLabel, MenuItem, Select, Stack, TextField, Typography, useMediaQuery, useTheme } from '@mui/material'
 import { useForm } from "react-hook-form"
 import { selectBrands } from '../../brands/BrandSlice'
 import { selectCategories } from '../../categories/CategoriesSlice'
 import { toast } from 'react-toastify'
+import { FormCard } from '../../../components/FormCard'
 
 export const AddProduct = () => {
 
@@ -53,20 +54,20 @@ export const AddProduct = () => {
     <Stack p={'0 16px'} justifyContent={'center'} alignItems={'center'} flexDirection={'row'} >
         
 
-        <Stack width={is1100?"100%":"60rem"} rowGap={4} mt={is480?4:6} mb={6} component={'form'} noValidate onSubmit={handleSubmit(handleAddProduct)}> 
+        <FormCard width={is1100?"100%":"60rem"} rowGap={4} mt={is480?4:6} mb={6} noValidate onSubmit={handleSubmit(handleAddProduct)}> 
             
             {/* feild area */}
             <Stack rowGap={3}>
                 <Stack>
-                    <Typography variant='h6' fontWeight={400} gutterBottom>Title</Typography>
+                    <Typography variant='h6' fontWeight={400} gutterBottom>{'Title'}</Typography>
                     <TextField {...register("title",{required:'Title is required'})}/>
-                </Stack> 
+                </Stack>
 
                 <Stack flexDirection={'row'} >
 
                     <FormControl fullWidth>
-                        <InputLabel id="brand-selection">Brand</InputLabel>
-                        <Select {...register("brand",{required:"Brand is required"})} labelId="brand-selection" label="Brand">
+                        <InputLabel id="brand-selection">{'Brand'}</InputLabel>
+                        <Select {...register("brand",{required:"Brand is required"})} labelId="brand-selection" label={'Brand'}>
                             
                             {
                                 brands.map((brand)=>(
@@ -79,8 +80,8 @@ export const AddProduct = () => {
 
 
                     <FormControl fullWidth>
-                        <InputLabel id="category-selection">Category</InputLabel>
-                        <Select {...register("category",{required:"category is required"})} labelId="category-selection" label="Category">
+                        <InputLabel id="category-selection">{'Category'}</InputLabel>
+                        <Select {...register("category",{required:"Category is required"})} labelId="category-selection" label={'Category'}>
                             
                             {
                                 categories.map((category)=>(
@@ -95,32 +96,36 @@ export const AddProduct = () => {
 
 
                 <Stack>
-                    <Typography variant='h6' fontWeight={400}  gutterBottom>Description</Typography>
+                    <Typography variant='h6' fontWeight={400}  gutterBottom>{'Description'}</Typography>
                     <TextField multiline rows={4} {...register("description",{required:"Description is required"})}/>
                 </Stack>
 
                 <Stack flexDirection={'row'}>
                     <Stack flex={1}>
-                        <Typography variant='h6' fontWeight={400}  gutterBottom>Price</Typography>
+                        <Typography variant='h6' fontWeight={400}  gutterBottom>{'Price'}</Typography>
                         <TextField type='number' {...register("price",{required:"Price is required"})}/>
                     </Stack>
                     <Stack flex={1}>
-                        <Typography variant='h6' fontWeight={400}  gutterBottom>Discount {is480?"%":"Percentage"}</Typography>
-                        <TextField type='number' {...register("discountPercentage",{required:"discount percentage is required"})}/>
+                        <Typography variant='h6' fontWeight={400}  gutterBottom>{'Discount'} {is480?"%":"Percentage"}</Typography>
+                        <TextField type='number' {...register("discountPercentage",{required:"Discount Percentage is required"})}/>
                     </Stack>
                 </Stack>
 
                 <Stack>
-                    <Typography variant='h6'  fontWeight={400} gutterBottom>Stock Quantity</Typography>
+                    <Typography variant='h6'  fontWeight={400} gutterBottom>{'Stock Quantity'}</Typography>
                     <TextField type='number' {...register("stockQuantity",{required:"Stock Quantity is required"})}/>
                 </Stack>
+                <FormControlLabel
+                    control={<Checkbox {...register("isUnlimitedStock")} />}
+                    label={"Unlimited stock"}
+                />
                 <Stack>
-                    <Typography variant='h6'  fontWeight={400} gutterBottom>Thumbnail</Typography>
+                    <Typography variant='h6'  fontWeight={400} gutterBottom>{'Thumbnail'}</Typography>
                     <TextField {...register("thumbnail",{required:"Thumbnail is required"})}/>
                 </Stack>
 
                 <Stack>
-                    <Typography variant='h6'  fontWeight={400} gutterBottom>Product Images</Typography>
+                    <Typography variant='h6'  fontWeight={400} gutterBottom>{'Product Images'}</Typography>
 
                     <Stack rowGap={2}>
    
@@ -137,11 +142,11 @@ export const AddProduct = () => {
 
             {/* action area */}
             <Stack flexDirection={'row'} alignSelf={'flex-end'} columnGap={is480?1:2}>
-                <Button size={is480?'medium':'large'} variant='contained' type='submit'>Add Product</Button>
-                <Button size={is480?'medium':'large'} variant='outlined' color='error' component={Link} to={'/admin/dashboard'}>Cancel</Button>
+                <Button size={is480?'medium':'large'} variant='contained' type='submit'>{'Add Product'}</Button>
+                <Button size={is480?'medium':'large'} variant='outlined' color='error' component={Link} to={'/admin/dashboard'}>{'Cancel'}</Button>
             </Stack>
 
-        </Stack>
+        </FormCard>
 
     </Stack>
   )

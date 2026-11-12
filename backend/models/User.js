@@ -22,6 +22,15 @@ const userSchema=new Schema({
     isAdmin:{
         type:Boolean,
         default:false
+    },
+    isSalesperson:{
+        type:Boolean,
+        default:false
+    },
+    monthlySalesTarget:{
+        type:Number,
+        default:10000,
+        min:0
     }
 })
 

@@ -6,6 +6,7 @@ import { selectLoggedInUser } from '../../auth/AuthSlice';
 import {deleteReviewByIdAsync, selectReviewStatus, updateReviewByIdAsync} from '../ReviewSlice'
 import { useForm } from "react-hook-form"
 import {LoadingButton} from '@mui/lab'
+import { FormCard } from '../../../components/FormCard'
 
 export const ReviewItem = ({id,username,userid,comment,rating,createdAt}) => {
 
@@ -40,7 +41,7 @@ export const ReviewItem = ({id,username,userid,comment,rating,createdAt}) => {
   const isOwnReview=userid===loggedInUser?._id 
 
   return (
-    <Stack position={'relative'} p={2} rowGap={2} width={'100%'} component={Paper} borderRadius={'.8px'}>
+    <Stack dir="rtl" lang="ar" position={'relative'} p={2} rowGap={2} width={'100%'} component={Paper} borderRadius={'.8px'} sx={{ fontFamily: 'Cairo, Tahoma, sans-serif', '& *:not(svg)': { fontFamily: 'Cairo, Tahoma, sans-serif' } }}>
 
         {/* user , rating and created at*/}
         <Stack flexDirection={'row'} justifyContent={'space-between'} alignItems={'center'}>
@@ -63,27 +64,27 @@ export const ReviewItem = ({id,username,userid,comment,rating,createdAt}) => {
               </IconButton>
 
               <Menu anchorEl={anchorEl} open={open} onClose={handleClose}>
-                <MenuItem onClick={()=>{setEdit(true);handleClose()}}>Edit</MenuItem>
-                <MenuItem onClick={deleteReview}>Delete</MenuItem>
+                <MenuItem onClick={()=>{setEdit(true);handleClose()}}>{'تعديل'}</MenuItem>
+                <MenuItem onClick={deleteReview}>{'حذف'}</MenuItem>
               </Menu>
             </Stack>
             )
           }
 
-            <Typography alignSelf={"flex-end"} justifySelf={'flex-end'} color={'text.secondary'} fontWeight={400} fontSize={'.9rem'}>{new Date(createdAt).toDateString()}</Typography>
+            <Typography alignSelf={"flex-end"} justifySelf={'flex-end'} color={'text.secondary'} fontWeight={400} fontSize={'.9rem'}>{new Intl.DateTimeFormat('ar-EG-u-nu-latn', { dateStyle: 'medium' }).format(new Date(createdAt))}</Typography>
         </Stack>
 
         {/* review comment */}
         <Stack>
           {
             edit?(
-              <Stack component={'form'} noValidate onSubmit={handleSubmit(handleUpdateReview)} rowGap={2}>
+              <FormCard noValidate onSubmit={handleSubmit(handleUpdateReview)} rowGap={2}>
                 <TextField multiline rows={4} {...register("comment",{required:true,value:comment})}/>
                 <Stack flexDirection={'row'} alignSelf={'flex-end'} columnGap={1} justifyContent={'center'} alignItems={'center'}>
-                  <LoadingButton size='small' type='submit' sx={{alignSelf:"flex-end"}} variant='contained'>Update</LoadingButton>
-                  <Button variant='outlined' size='small' onClick={()=>setEdit(false)} color='error'>Cancel</Button>
+                  <LoadingButton size='small' type='submit' sx={{alignSelf:"flex-end"}} variant='contained'>{'حفظ التعديلات'}</LoadingButton>
+                  <Button variant='outlined' size='small' onClick={()=>setEdit(false)} color='error'>{'إلغاء'}</Button>
                 </Stack>
-              </Stack>
+              </FormCard>
             ):(<Typography color='graytext'>{comment}</Typography>)
           }
             

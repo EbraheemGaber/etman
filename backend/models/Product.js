@@ -14,6 +14,10 @@ const productSchema= new Schema({
         type:Number,
         required:true
     },
+    priceIsEstimate:{
+        type:Boolean,
+        default:false
+    },
     discountPercentage: {
         type: Number,
         default: 0,
@@ -31,6 +35,10 @@ const productSchema= new Schema({
     stockQuantity:{
         type:Number,
         required:true
+    },
+    isUnlimitedStock:{
+        type:Boolean,
+        default:false
     },
     thumbnail:{
         type:String,

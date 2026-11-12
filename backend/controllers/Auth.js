@@ -21,7 +21,11 @@ exports.signup=async(req,res)=>{
         req.body.password=hashedPassword
 
         // creating new user
-        const createdUser=new User(req.body)
+        const createdUser=new User({
+            name:req.body.name,
+            email:req.body.email,
+            password:hashedPassword
+        })
         await createdUser.save()
 
         // getting secure user info
@@ -234,15 +238,16 @@ exports.resetPassword=async(req,res)=>{
 
 exports.logout=async(req,res)=>{
     try {
-        res.cookie('token',{
-            maxAge:0,
+        res.clearCookie('token',{
             sameSite:process.env.PRODUCTION==='true'?"None":'Lax',
             httpOnly:true,
-            secure:process.env.PRODUCTION==='true'?true:false
+            secure:process.env.PRODUCTION==='true',
+            path:'/'
         })
         res.status(200).json({message:'Logout successful'})
     } catch (error) {
         console.log(error);
+        res.status(500).json({message:'Unable to log out, please try again'})
     }
 }
 

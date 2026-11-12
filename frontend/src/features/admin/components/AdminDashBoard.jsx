@@ -98,7 +98,7 @@ export const AdminDashBoard = () => {
         <Stack mb={'5rem'}  sx={{scrollBehavior:"smooth",overflowY:"scroll"}}>
 
         
-            <Typography variant='h4'>New Arrivals</Typography>
+            <Typography variant='h4'>{'New Arrivals'}</Typography>
 
 
                 <IconButton onClick={handleFilterClose} style={{position:"absolute",top:15,right:15}}>
@@ -109,18 +109,18 @@ export const AdminDashBoard = () => {
 
 
         <Stack rowGap={2} mt={4} >
-            <Typography sx={{cursor:"pointer"}} variant='body2'>Totes</Typography>
-            <Typography sx={{cursor:"pointer"}} variant='body2'>Backpacks</Typography>
-            <Typography sx={{cursor:"pointer"}} variant='body2'>Travel Bags</Typography>
-            <Typography sx={{cursor:"pointer"}} variant='body2'>Hip Bags</Typography>
-            <Typography sx={{cursor:"pointer"}} variant='body2'>Laptop Sleeves</Typography>
+            <Typography sx={{cursor:"pointer"}} variant='body2'>{'Totes'}</Typography>
+            <Typography sx={{cursor:"pointer"}} variant='body2'>{'Backpacks'}</Typography>
+            <Typography sx={{cursor:"pointer"}} variant='body2'>{'Travel Bags'}</Typography>
+            <Typography sx={{cursor:"pointer"}} variant='body2'>{'Hip Bags'}</Typography>
+            <Typography sx={{cursor:"pointer"}} variant='body2'>{'Laptop Sleeves'}</Typography>
         </Stack>
 
         {/* brand filters */}
         <Stack mt={2}>
             <Accordion>
                 <AccordionSummary expandIcon={<AddIcon />}  aria-controls="brand-filters" id="brand-filters" >
-                        <Typography>Brands</Typography>
+                        <Typography>{'Brands'}</Typography>
                 </AccordionSummary>
 
                 <AccordionDetails sx={{p:0}}>
@@ -141,7 +141,7 @@ export const AdminDashBoard = () => {
         <Stack mt={2}>
             <Accordion>
                 <AccordionSummary expandIcon={<AddIcon />}  aria-controls="brand-filters" id="brand-filters" >
-                        <Typography>Category</Typography>
+                        <Typography>{'Category'}</Typography>
                 </AccordionSummary>
 
                 <AccordionDetails sx={{p:0}}>
@@ -166,20 +166,23 @@ export const AdminDashBoard = () => {
         {/* sort options */}
         <Stack flexDirection={'row'} mr={'2rem'} justifyContent={'flex-end'} alignItems={'center'} columnGap={5}>
 
+            <Button component={Link} to="/admin/orders" variant="contained">{'View Orders'}</Button>
+            <Button component={Link} to="/admin/statistics" variant="outlined">{'Statistics'}</Button>
+
             <Stack alignSelf={'flex-end'} width={'12rem'}>
                 <FormControl fullWidth>
-                        <InputLabel id="sort-dropdown">Sort</InputLabel>
+                        <InputLabel id="sort-dropdown">{'Sort'}</InputLabel>
                         <Select
                             variant='standard'
                             labelId="sort-dropdown"
-                            label="Sort"
+                            label={'Sort'}
                             onChange={(e)=>setSort(e.target.value)}
                             value={sort}
                         >
-                            <MenuItem bgcolor='text.secondary' value={null}>Reset</MenuItem>
+                            <MenuItem bgcolor='text.secondary' value={null}>{'Reset'}</MenuItem>
                             {
                                 sortOptions.map((option)=>(
-                                    <MenuItem key={option} value={option}>{option.name}</MenuItem>
+                                    <MenuItem key={option.name} value={option}>{option.name}</MenuItem>
                                 ))
                             }
                         </Select>
@@ -193,15 +196,15 @@ export const AdminDashBoard = () => {
                 products.map((product)=>(
                     <Stack>
                         <Stack sx={{opacity:product.isDeleted?.7:1}}>
-                            <ProductCard key={product._id} id={product._id} title={product.title} thumbnail={product.thumbnail} brand={product.brand.name} price={product.price} isAdminCard={true}/>
+                            <ProductCard key={product._id} id={product._id} title={product.title} thumbnail={product.thumbnail} brand={product.brand.name} price={product.price} priceIsEstimate={product.priceIsEstimate} discountPercentage={product.discountPercentage} stockQuantity={product.stockQuantity} isUnlimitedStock={product.isUnlimitedStock} isAdminCard={true}/>
                         </Stack>
                         <Stack paddingLeft={2} paddingRight={2} flexDirection={'row'} justifySelf={'flex-end'} alignSelf={'flex-end'} columnGap={is488?1:2}>
-                            <Button component={Link} to={`/admin/product-update/${product._id}`} variant='contained'>Update</Button>
+                            <Button component={Link} to={`/admin/product-update/${product._id}`} variant='contained'>{'Update'}</Button>
                             {
                                 product.isDeleted===true?(
-                                    <Button onClick={()=>handleProductUnDelete(product._id)} color='error' variant='outlined'>Un-delete</Button>
+                                    <Button onClick={()=>handleProductUnDelete(product._id)} color='error' variant='outlined'>{'Un-delete'}</Button>
                                 ):(
-                                    <Button onClick={()=>handleProductDelete(product._id)} color='error' variant='outlined'>Delete</Button>
+                                    <Button onClick={()=>handleProductDelete(product._id)} color='error' variant='outlined'>{'Delete'}</Button>
                                 )
                             }
                         </Stack>
@@ -212,7 +215,9 @@ export const AdminDashBoard = () => {
 
         <Stack alignSelf={is488?'center':'flex-end'} mr={is488?0:5} rowGap={2} p={is488?1:0}>
             <Pagination size={is488?'medium':'large'} page={page}  onChange={(e,page)=>setPage(page)} count={Math.ceil(totalResults/ITEMS_PER_PAGE)} variant="outlined" shape="rounded" />
-            <Typography textAlign={'center'}>Showing {(page-1)*ITEMS_PER_PAGE+1} to {page*ITEMS_PER_PAGE>totalResults?totalResults:page*ITEMS_PER_PAGE} of {totalResults} results</Typography>
+            <Typography textAlign={'center'}>
+                {`Showing ${(page-1)*ITEMS_PER_PAGE+1} to ${page*ITEMS_PER_PAGE>totalResults?totalResults:page*ITEMS_PER_PAGE} of ${totalResults} results`}
+            </Typography>
         </Stack>    
     
     </Stack> 

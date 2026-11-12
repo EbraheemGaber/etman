@@ -151,7 +151,7 @@ export const Wishlist = () => {
                 <motion.div whileHover={{x:-5}}>
                   <IconButton component={Link} to={'/'}><ArrowBackIcon fontSize={is480?'medium':'large'}/></IconButton>
                 </motion.div>
-                <Typography variant='h4' fontWeight={500}>Your wishlist</Typography>
+                <Typography variant='h4' fontWeight={500}>{'Your wishlist'}</Typography>
             </Stack>
 
             {/* product grid */}
@@ -162,7 +162,7 @@ export const Wishlist = () => {
                   // empty wishlist animation
                   <Stack minHeight={'60vh'} width={is642?'auto':'40rem'} justifySelf={'center'}  alignSelf={'center'} justifyContent={'center'} alignItems={'center'}>
                     <Lottie animationData={emptyWishlistAnimation}/>
-                    <Typography variant='h6' fontWeight={300}>You have no items in your wishlist</Typography>
+                    <Typography variant='h6' fontWeight={300}>{'You have no items in your wishlist'}</Typography>
                   </Stack>
                 ):
                 // wishlist grid
@@ -171,13 +171,13 @@ export const Wishlist = () => {
                     wishlistItems.map((item,index)=>(
                       <Stack component={is480?"":Paper} elevation={1} >
 
-                          <ProductCard item key={item._id} brand={item.product.brand.name} id={item.product._id} price={item.product.price} stockQuantity={item.product.stockQuantity} thumbnail={item.product.thumbnail} title={item.product.title} handleAddRemoveFromWishlist={handleAddRemoveFromWishlist} isWishlistCard={true}/>
+                          <ProductCard item key={item._id} brand={item.product.brand.name} id={item.product._id} price={item.product.price} priceIsEstimate={item.product.priceIsEstimate} discountPercentage={item.product.discountPercentage} stockQuantity={item.product.stockQuantity} isUnlimitedStock={item.product.isUnlimitedStock} thumbnail={item.product.thumbnail} title={item.product.title} handleAddRemoveFromWishlist={handleAddRemoveFromWishlist} isWishlistCard={true}/>
                         
                         <Stack paddingLeft={2} paddingRight={2} paddingBottom={2}>
 
                           {/* note heading and icon */}
                           <Stack flexDirection={'row'} alignItems={'center'}>
-                            <Typography variant='h6' fontWeight={400}>Note</Typography>
+                            <Typography variant='h6' fontWeight={400}>{'Note'}</Typography>
                             <IconButton onClick={()=>handleEdit(index)} ><EditOutlinedIcon/></IconButton>
                           </Stack>
 
@@ -189,8 +189,8 @@ export const Wishlist = () => {
                                 <TextField multiline rows={4} value={editValue} onChange={(e)=>setEditValue(e.target.value)}/>
                                 
                                 <Stack flexDirection={'row'} alignSelf={'flex-end'} columnGap={1}>
-                                    <Button onClick={()=>handleNoteUpdate(item._id)} size='small' variant='contained'>Update</Button>
-                                    <Button onClick={()=>setEditIndex(-1)} size='small' variant='outlined' color='error'>Cancel</Button>
+                                    <Button onClick={()=>handleNoteUpdate(item._id)} size='small' variant='contained'>{'Update'}</Button>
+                                    <Button onClick={()=>setEditIndex(-1)} size='small' variant='outlined' color='error'>{'Cancel'}</Button>
                                 </Stack>
 
                               </Stack>
@@ -202,7 +202,7 @@ export const Wishlist = () => {
 
                           {
                             cartItems.some((cartItem)=>cartItem.product._id===item.product._id)?
-                            <Button sx={{mt:4}} size='small' variant='outlined' component={Link} to={'/cart'}>Already in cart</Button>:<Button sx={{mt:4}} size='small' onClick={()=>handleAddToCart(item.product._id)} variant='outlined'>Add To Cart</Button>
+                            <Button sx={{mt:4}} size='small' variant='outlined' component={Link} to={'/cart'}>{'Already in cart'}</Button>:<Button sx={{mt:4}} size='small' onClick={()=>handleAddToCart(item.product._id)} variant='outlined'>{'Add To Cart'}</Button>
                           }
                           
                           

@@ -1,131 +1,146 @@
-import {FormHelperText, Stack, TextField, Typography,Box, useTheme, useMediaQuery} from '@mui/material'
+import { Box, FormHelperText, Stack, TextField, Typography } from '@mui/material'
 import React, { useEffect } from 'react'
-import Lottie from 'lottie-react'
-import { Link, useNavigate } from 'react-router-dom'
-import { useForm } from "react-hook-form"
-import { ecommerceOutlookAnimation, shoppingBagAnimation} from '../../../assets'
-import {useDispatch,useSelector} from 'react-redux'
-import { LoadingButton } from '@mui/lab';
-import {selectLoggedInUser, signupAsync,selectSignupStatus, selectSignupError, clearSignupError, resetSignupStatus} from '../AuthSlice'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useForm } from 'react-hook-form'
+import { useDispatch, useSelector } from 'react-redux'
+import { LoadingButton } from '@mui/lab'
+import {
+  selectLoggedInUser,
+  signupAsync,
+  selectSignupStatus,
+  selectSignupError,
+  clearSignupError,
+  resetSignupStatus
+} from '../AuthSlice'
 import { toast } from 'react-toastify'
-import { MotionConfig , motion} from 'framer-motion'
+import { motion } from 'framer-motion'
+import { FormCard } from '../../../components/FormCard'
+import { PasswordField } from '../../../components/PasswordField'
+import { AuthHomeLink } from './AuthHomeLink'
 
 export const Signup = () => {
-  const dispatch=useDispatch()
-  const status=useSelector(selectSignupStatus)
-  const error=useSelector(selectSignupError)
-  const loggedInUser=useSelector(selectLoggedInUser)
-  const {register,handleSubmit,reset,formState: { errors }} = useForm()
-  const navigate=useNavigate()
-  const theme=useTheme()
-  const is900=useMediaQuery(theme.breakpoints.down(900))
-  const is480=useMediaQuery(theme.breakpoints.down(480))
+  const dispatch = useDispatch()
+  const status = useSelector(selectSignupStatus)
+  const error = useSelector(selectSignupError)
+  const loggedInUser = useSelector(selectLoggedInUser)
+  const { register, handleSubmit, reset, formState: { errors } } = useForm()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const returnTo = location.state?.from
+  const returnPath = returnTo?.pathname?.startsWith('/') && !returnTo.pathname.startsWith('//')
+    ? `${returnTo.pathname}${returnTo.search || ''}${returnTo.hash || ''}`
+    : '/'
 
-  // handles user redirection
-  useEffect(()=>{
-    if(loggedInUser && !loggedInUser?.isVerified){
-      navigate("/verify-otp")
+  useEffect(() => {
+    if (loggedInUser && !loggedInUser?.isVerified) {
+      navigate('/verify-otp', { state: { from: returnTo }, replace: true })
+    } else if (loggedInUser) {
+      navigate(returnPath, { replace: true })
     }
-    else if(loggedInUser){
-      navigate("/")
-    }
-  },[loggedInUser])
+  }, [loggedInUser, navigate, returnPath, returnTo])
 
+  useEffect(() => {
+    if (error) toast.error(error.message)
+  }, [error])
 
-  // handles signup error and toast them
-  useEffect(()=>{
-    if(error){
-      toast.error(error.message)
-    }
-  },[error])
-
-  
-  useEffect(()=>{
-    if(status==='fullfilled'){
-      toast.success("Welcome! Verify your email to start shopping on mern-ecommerce.")
+  useEffect(() => {
+    if (status === 'fullfilled') {
+      toast.success('مرحبًا بك! تحقق من بريدك الإلكتروني لبدء التسوق.')
       reset()
     }
-    return ()=>{
+    return () => {
       dispatch(clearSignupError())
       dispatch(resetSignupStatus())
     }
-  },[status])
+  }, [status])
 
-  // this function handles signup and dispatches the signup action with credentails that api requires
-  const handleSignup=(data)=>{
-    const cred={...data}
+  const handleSignup = (data) => {
+    const cred = { ...data }
     delete cred.confirmPassword
     dispatch(signupAsync(cred))
   }
 
   return (
-    <Stack width={'100vw'} height={'100vh'} flexDirection={'row'} sx={{overflowY:"hidden"}}>
-
-      {
-        !is900 &&
-
-        <Stack bgcolor={'black'} flex={1} justifyContent={'center'} >
-          <Lottie animationData={ecommerceOutlookAnimation}/>
+    <Stack
+      width="100%"
+      minHeight="100vh"
+      justifyContent="center"
+      alignItems="center"
+      dir="rtl"
+      lang="ar"
+      sx={{ px: 2, py: 4, backgroundColor: '#fff', fontFamily: 'Cairo, Tahoma, sans-serif', '& *:not(svg)': { fontFamily: 'Cairo, Tahoma, sans-serif' } }}
+    >
+      <Stack width="100%" maxWidth="22rem" alignItems="stretch">
+        <Stack alignItems="flex-start" spacing={0.5} sx={{ mb: 2 }}>
+          <Typography variant="h5" fontWeight={700} color="text.primary">{'أنشئ حسابك في متجر عتمان جروب'}</Typography>
+          <Typography variant="body2" color="text.secondary">
+            {'لديك حساب بالفعل؟'}{' '}
+            <Box component={Link} to="/login" state={{ from: returnTo }} sx={{ color: 'primary.main', fontWeight: 600, textDecoration: 'none' }}>
+              {'تسجيل الدخول'}
+            </Box>
+          </Typography>
         </Stack>
-        
-        }
 
-        <Stack flex={1} justifyContent={'center'} alignItems={'center'}>
+        <FormCard dir="rtl" lang="ar" width="100%" noValidate onSubmit={handleSubmit(handleSignup)} sx={{ borderRadius: 2, p: 2 }}>
+          <motion.div whileHover={{ y: -2 }}>
+            <TextField fullWidth {...register('name', { required: 'الاسم مطلوب' })} placeholder="الاسم" />
+            {errors.name && <FormHelperText error>{errors.name.message}</FormHelperText>}
+          </motion.div>
 
-              <Stack flexDirection={'row'} justifyContent={'center'} alignItems={'center'}>
-                  <Stack rowGap={'.4rem'}>
-                    <Typography variant='h2' sx={{wordBreak:"break-word"}} fontWeight={600}>Mern Shop</Typography>
-                    <Typography alignSelf={'flex-end'} color={'GrayText'} variant='body2'>- Shop Anything</Typography>
-                  </Stack>
+          <motion.div whileHover={{ y: -2 }}>
+            <TextField
+              fullWidth
+              {...register('email', {
+                required: 'البريد الإلكتروني مطلوب',
+                pattern: {
+                  value: /[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?/g,
+                  message: 'أدخل بريدًا إلكترونيًا صحيحًا'
+                }
+              })}
+              placeholder="البريد الإلكتروني"
+            />
+            {errors.email && <FormHelperText error>{errors.email.message}</FormHelperText>}
+          </motion.div>
 
-              </Stack>
+          <motion.div whileHover={{ y: -2 }}>
+            <PasswordField
+              fullWidth
+              showPasswordLabel="إظهار كلمة المرور"
+              hidePasswordLabel="إخفاء كلمة المرور"
+              {...register('password', {
+                required: 'كلمة المرور مطلوبة',
+                pattern: {
+                  value: /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/gm,
+                  message: 'يجب أن تتكون كلمة المرور من 8 أحرف على الأقل، وأن تحتوي على حرف كبير وحرف صغير ورقم.'
+                }
+              })}
+              placeholder="كلمة المرور"
+            />
+            {errors.password && <FormHelperText error>{errors.password.message}</FormHelperText>}
+          </motion.div>
 
-                <Stack mt={4} spacing={2} width={is480?"95vw":'28rem'} component={'form'} noValidate onSubmit={handleSubmit(handleSignup)}>
+          <motion.div whileHover={{ y: -2 }}>
+            <PasswordField
+              fullWidth
+              showPasswordLabel="إظهار كلمة المرور"
+              hidePasswordLabel="إخفاء كلمة المرور"
+              {...register('confirmPassword', {
+                required: 'يرجى تأكيد كلمة المرور',
+                validate: (value, values) => value === values.password || 'كلمتا المرور غير متطابقتين'
+              })}
+              placeholder="تأكيد كلمة المرور"
+            />
+            {errors.confirmPassword && <FormHelperText error>{errors.confirmPassword.message}</FormHelperText>}
+          </motion.div>
 
-                    <MotionConfig whileHover={{y:-5}}>
-
-                      <motion.div>
-                        <TextField fullWidth {...register("name",{required:"Username is required"})} placeholder='Username'/>
-                        {errors.name && <FormHelperText error>{errors.name.message}</FormHelperText>}
-                      </motion.div>
-
-                      <motion.div>
-                        <TextField fullWidth {...register("email",{required:"Email is required",pattern:{value:/[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?/g,message:"Enter a valid email"}})} placeholder='Email'/>
-                        {errors.email && <FormHelperText error>{errors.email.message}</FormHelperText>}
-                      </motion.div>
-
-                      <motion.div>
-                        <TextField type='password' fullWidth {...register("password",{required:"Password is required",pattern:{value:/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/gm,message:`at least 8 characters, must contain at least 1 uppercase letter, 1 lowercase letter, and 1 number, Can contain special characters`}})} placeholder='Password'/>
-                        {errors.password && <FormHelperText error>{errors.password.message}</FormHelperText>}
-                      </motion.div>
-                      
-                      <motion.div>
-                        <TextField type='password' fullWidth {...register("confirmPassword",{required:"Confirm Password is required",validate:(value,fromValues)=>value===fromValues.password || "Passwords doesn't match"})} placeholder='Confirm Password'/>
-                        {errors.confirmPassword && <FormHelperText error>{errors.confirmPassword.message}</FormHelperText>}
-                      </motion.div>
-                    
-                    </MotionConfig>
-
-                    <motion.div whileHover={{scale:1.020}} whileTap={{scale:1}}>
-                      <LoadingButton sx={{height:'2.5rem'}} fullWidth loading={status==='pending'} type='submit' variant='contained'>Signup</LoadingButton>
-                    </motion.div>
-
-                    <Stack flexDirection={'row'} justifyContent={'space-between'} alignItems={'center'} flexWrap={'wrap-reverse'}>
-                        <MotionConfig whileHover={{x:2}} whileTap={{scale:1.050}}>
-                            <motion.div>
-                                <Typography mr={'1.5rem'} sx={{textDecoration:"none",color:"text.primary"}} to={'/forgot-password'} component={Link}>Forgot password</Typography>
-                            </motion.div>
-
-                            <motion.div>
-                                <Typography sx={{textDecoration:"none",color:"text.primary"}} to={'/login'} component={Link}>Already a member? <span style={{color:theme.palette.primary.dark}}>Login</span></Typography>
-                            </motion.div>
-                        </MotionConfig>
-                    </Stack>
-
-                </Stack>
-
-
-        </Stack>
+          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 1 }}>
+            <LoadingButton fullWidth sx={{ height: '2.5rem', borderRadius: 999, fontWeight: 700 }} loading={status === 'pending'} type="submit" variant="contained">
+              {'إنشاء حساب'}
+            </LoadingButton>
+          </motion.div>
+          <AuthHomeLink />
+        </FormCard>
+      </Stack>
     </Stack>
   )
 }

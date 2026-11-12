@@ -2,14 +2,55 @@ import React, { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { getOrderByUserIdAsync, resetOrderFetchStatus, selectOrderFetchStatus, selectOrders } from '../OrderSlice'
 import { selectLoggedInUser } from '../../auth/AuthSlice'
-import { Button, IconButton, Paper, Stack, Typography, useMediaQuery, useTheme } from '@mui/material'
+import {
+    Button,
+    Chip,
+    Collapse,
+    IconButton,
+    Paper,
+    Stack,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    Typography,
+    useMediaQuery,
+    useTheme
+} from '@mui/material'
 import {Link} from 'react-router-dom'
 import { addToCartAsync, resetCartItemAddStatus, selectCartItemAddStatus, selectCartItems } from '../../cart/CartSlice'
 import Lottie from 'lottie-react'
 import { loadingAnimation, noOrdersAnimation } from '../../../assets'
 import { toast } from 'react-toastify'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'
 import {motion} from 'framer-motion'
+
+const formatOrderDate=(value)=>{
+    const date=new Date(value)
+    if(Number.isNaN(date.getTime())) return '—'
+    const year=date.toLocaleString('ar-EG-u-nu-latn',{year:'numeric'})
+    const month=date.toLocaleString('ar-EG-u-nu-latn',{month:'2-digit'})
+    const day=date.toLocaleString('ar-EG-u-nu-latn',{day:'2-digit'})
+    return `${year}/${month}/${day}`
+}
+
+const formatCurrency=(value)=>`ج.م ${Number(value || 0).toLocaleString('ar-EG-u-nu-latn')}`
+
+const orderStatusLabels={
+    Pending:'قيد الانتظار',
+    Dispatched:'تم الشحن',
+    'Out for delivery':'قيد التوصيل',
+    Delivered:'تم التوصيل',
+    Cancelled:'ملغي'
+}
+
+const paymentModeLabels={
+    COD:'الدفع نقدًا عند الاستلام',
+    CARD:'الدفع بالبطاقة'
+}
 
 
 export const UserOrders = () => {
@@ -21,12 +62,11 @@ export const UserOrders = () => {
     const orderFetchStatus=useSelector(selectOrderFetchStatus)
 
     const theme=useTheme()
-    const is1200=useMediaQuery(theme.breakpoints.down("1200"))
-    const is768=useMediaQuery(theme.breakpoints.down("768"))
     const is660=useMediaQuery(theme.breakpoints.down(660))
     const is480=useMediaQuery(theme.breakpoints.down("480"))
 
     const cartItemAddStatus=useSelector(selectCartItemAddStatus)
+    const [expandedOrderId,setExpandedOrderId]=React.useState('')
     
     useEffect(()=>{
         window.scrollTo({
@@ -43,17 +83,17 @@ export const UserOrders = () => {
     useEffect(()=>{
 
         if(cartItemAddStatus==='fulfilled'){
-            toast.success("Product added to cart")
+            toast.success("تمت إضافة المنتج إلى سلة التسوق")
         }
 
         else if(cartItemAddStatus==='rejected'){
-            toast.error('Error adding product to cart, please try again later')
+            toast.error('تعذرت إضافة المنتج إلى سلة التسوق. يرجى المحاولة لاحقًا.')
         }
     },[cartItemAddStatus])
 
     useEffect(()=>{
         if(orderFetchStatus==='rejected'){
-            toast.error("Error fetching orders, please try again later")
+            toast.error("تعذر تحميل الطلبات. يرجى المحاولة مرة أخرى.")
         }
     },[orderFetchStatus])
 
@@ -72,117 +112,186 @@ export const UserOrders = () => {
 
 
   return (
-    <Stack justifyContent={'center'} alignItems={'center'}>
+    <Stack
+        width="100%"
+        minWidth={0}
+        justifyContent={'center'}
+        alignItems={'center'}
+        dir="rtl"
+        lang="ar"
+        sx={{fontFamily:'Cairo, Tahoma, sans-serif','& *:not(svg)':{fontFamily:'Cairo, Tahoma, sans-serif'}}}
+    >
         {
             orderFetchStatus==='pending'?
             <Stack width={is480?'auto':'25rem'} height={'calc(100vh - 4rem)'} justifyContent={'center'} alignItems={'center'}>
                 <Lottie animationData={loadingAnimation}/>
             </Stack>
             :
-            <Stack width={is1200?"auto":"60rem"} p={is480?2:4} mb={'5rem'}>
+            <Stack width="100%" maxWidth="42rem" minWidth={0} boxSizing="border-box" px={is480?2:3} pt={is480?2:3} pb={8}>
                 
                 {/* heading and navigation */}
-                <Stack flexDirection={'row'} columnGap={2} >
+                <Stack flexDirection={'row'} columnGap={1.5} alignItems="center" textAlign="right">
                     {
                         !is480 && <motion.div whileHover={{x:-5}} style={{alignSelf:"center"}}>
-                        <IconButton component={Link} to={"/"}><ArrowBackIcon fontSize='large'/></IconButton>
+                        <IconButton component={Link} to={"/"} aria-label="العودة إلى الرئيسية"><ArrowBackIcon fontSize='large'/></IconButton>
                     </motion.div>
                     }
     
 
-                    <Stack rowGap={1} >
-                        <Typography variant='h4' fontWeight={500}>Order history</Typography>
-                        <Typography sx={{wordWrap:"break-word"}} color={'text.secondary'}>Check the status of recent orders, manage returns, and discover similar products.</Typography>
+                    <Stack rowGap={0.5} flex={1}>
+                        <Typography variant='h4' fontWeight={500}>{'سجل الطلبات'}</Typography>
+                        <Typography sx={{wordWrap:"break-word"}} color={'text.secondary'}>{'تابع حالة طلباتك الأخيرة واستعرض تفاصيلها ومنتجاتها.'}</Typography>
                     </Stack>
 
                 </Stack>
 
                 {/* orders */}
-                <Stack mt={5} rowGap={5}>
+                <Stack mt={3} width="100%" minWidth={0}>
+                        {orders.length>0 && (
+                            <TableContainer
+                                component={Paper}
+                                elevation={0}
+                                tabIndex={0}
+                                aria-label="جدول سجل الطلبات القابل للتمرير"
+                                sx={{
+                                    width:'100%',
+                                    maxWidth:'100%',
+                                    minWidth:0,
+                                    border:'1px solid #e0e0e0',
+                                    borderRadius:0,
+                                    overflowX:'auto',
+                                    overscrollBehaviorX:'contain',
+                                    WebkitOverflowScrolling:'touch'
+                                }}
+                            >
+                                <Table size="small" sx={{minWidth:620}} aria-label={"سجل الطلبات"}>
+                                    <TableHead>
+                                        <TableRow sx={{'& th':{color:'text.secondary',fontWeight:600,whiteSpace:'nowrap',borderBottom:'1px solid #e0e0e0'}}}>
+                                            <TableCell padding="checkbox" />
+                                            <TableCell>{'رقم الطلب'}</TableCell>
+                                            <TableCell>{'المنتجات'}</TableCell>
+                                            <TableCell align="right">{'الإجمالي'}</TableCell>
+                                            <TableCell>{'تاريخ الطلب'}</TableCell>
+                                            <TableCell>{'الحالة'}</TableCell>
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        {orders.map((order)=>{
+                                            const expanded=expandedOrderId===order._id
+                                            const orderItems=order.item || []
+                                            const statusColors={
+                                                Pending:{bgcolor:'#dfc9f7',color:'#7c59a4'},
+                                                Dispatched:{bgcolor:'#feed80',color:'#927b1e'},
+                                                'Out for delivery':{bgcolor:'#AACCFF',color:'#4793AA'},
+                                                Delivered:{bgcolor:'#b3f5ca',color:'#548c6a'},
+                                                Cancelled:{bgcolor:'#ffebee',color:'#c62828'}
+                                            }
 
-                        {/* orders mapping */}
-                        {
-                            orders && orders.map((order)=>(
-                                <Stack p={is480?0:2} component={is480?"":Paper} elevation={1} rowGap={2}>
-                                    
-                                    {/* upper */}
-                                    <Stack flexDirection={'row'} rowGap={'1rem'}  justifyContent={'space-between'} flexWrap={'wrap'}>
-                                        <Stack flexDirection={'row'} columnGap={4} rowGap={'1rem'} flexWrap={'wrap'}>
-                                            <Stack>
-                                                <Typography>Order Number</Typography>
-                                                <Typography color={'text.secondary'}>{order._id}</Typography>
-                                            </Stack>
+                                            return (
+                                                <React.Fragment key={order._id}>
+                                                    <TableRow hover sx={{'& td':{py:0.75,verticalAlign:'middle'},...(expanded?{'& td':{py:0.75,verticalAlign:'middle',borderBottom:0}}:{})}}>
+                                                        <TableCell padding="checkbox">
+                                                            <IconButton
+                                                                size="small"
+                                                                aria-label={expanded?'إخفاء تفاصيل الطلب':'عرض تفاصيل الطلب'}
+                                                                aria-expanded={expanded}
+                                                                onClick={()=>setExpandedOrderId(expanded?'':order._id)}
+                                                                sx={{transform:expanded?'rotate(180deg)':'rotate(0deg)',transition:'transform 200ms ease'}}
+                                                            >
+                                                                <KeyboardArrowDownIcon fontSize="small"/>
+                                                            </IconButton>
+                                                        </TableCell>
+                                                        <TableCell sx={{whiteSpace:'nowrap'}}>
+                                                            <Typography variant="body2" fontWeight={600}>
+                                                                #{order._id?.slice(-6).toUpperCase() || '—'}
+                                                            </Typography>
+                                                        </TableCell>
+                                                        <TableCell sx={{whiteSpace:'nowrap'}}>
+                                                            {orderItems.length} {orderItems.length===1?'منتج':'منتجات'}
+                                                        </TableCell>
+                                                        <TableCell align="right" sx={{whiteSpace:'nowrap',fontWeight:600}}>
+                                                            {formatCurrency(order.total)}
+                                                        </TableCell>
+                                                        <TableCell sx={{whiteSpace:'nowrap'}}>
+                                                            {formatOrderDate(order.createdAt)}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Chip
+                                                                label={orderStatusLabels[order.status] || order.status}
+                                                                size="small"
+                                                                sx={statusColors[order.status] || {bgcolor:'#f5f5f5'}}
+                                                            />
+                                                        </TableCell>
+                                                    </TableRow>
+                                                    <TableRow>
+                                                        <TableCell colSpan={6} sx={{p:0,borderBottom:expanded?'1px solid rgba(224, 224, 224, 1)':0}}>
+                                                            <Collapse in={expanded} timeout={220} unmountOnExit>
+                                                                <Stack spacing={1.5} sx={{px:3,py:2,backgroundColor:'action.hover'}}>
+                                                                    <Stack direction={{xs:'column',sm:'row'}} justifyContent="space-between" spacing={1}>
+                                                                        <Typography variant="subtitle2">
+                                                                            {'الطلب'} #{order._id?.slice(-6).toUpperCase() || '—'} · {paymentModeLabels[order.paymentMode] || order.paymentMode || 'طريقة الدفع غير متاحة'}
+                                                                        </Typography>
+                                                                        <Typography variant="body2" color="text.secondary">
+                                                                            الإجمالي: {formatCurrency(order.total)}
+                                                                        </Typography>
+                                                                    </Stack>
+                                                                    {orderItems.map((entry,index)=>{
+                                                                        const product=entry.product || {}
+                                                                        const alreadyInCart=cartItems.some((cartItem)=>cartItem.product?._id===product._id)
 
-                                            <Stack>
-                                                <Typography>Date Placed</Typography>
-                                                <Typography color={'text.secondary'}>{new Date(order.createdAt).toDateString()}</Typography>
-                                            </Stack>
+                                                                        return (
+                                                                            <Stack
+                                                                                key={`${order._id}-${index}`}
+                                                                                direction={{xs:'column',sm:'row'}}
+                                                                                alignItems={{xs:'flex-start',sm:'center'}}
+                                                                                spacing={1.5}
+                                                                                sx={{py:1,borderTop:'1px solid',borderColor:'divider'}}
+                                                                            >
+                                                                                <img
+                                                                                    style={{width:56,height:56,objectFit:'contain',borderRadius:6,background:'#fff'}}
+                                                                                    src={product.thumbnail || product.images?.[0] || ''}
+                                                                                    alt={product.title || 'المنتج'}
+                                                                                />
+                                                                                <Stack flex={1} spacing={0.25}>
+                                                                                    <Typography variant="body2" fontWeight={600}>{product.title || 'المنتج'}</Typography>
+                                                                                    {product.brand?.name && (
+                                                                                        <Typography variant="caption" color="text.secondary">{product.brand.name}</Typography>
+                                                                                    )}
+                                                                                    <Typography variant="caption" color="text.secondary">
+                                                                                        الكمية: {entry.quantity} · {formatCurrency(product.price)} للقطعة
+                                                                                    </Typography>
+                                                                                </Stack>
+                                                                                {product._id && (
+                                                                                    <Stack direction="row" spacing={1}>
+                                                                                        <Button size="small" component={Link} to={`/product-details/${product._id}`} variant="outlined">
+                                                                                            {'عرض المنتج'}
+                                                                                        </Button>
+                                                                                        {alreadyInCart ? (
+                                                                                            <Button size="small" variant="contained" component={Link} to="/cart">
+                                                                                                {'موجود في السلة'}
+                                                                                            </Button>
+                                                                                        ) : (
+                                                                                            <Button size="small" variant="contained" onClick={()=>handleAddToCart(product)}>
+                                                                                                {'اشترِ مرة أخرى'}
+                                                                                            </Button>
+                                                                                        )}
+                                                                                    </Stack>
+                                                                                )}
+                                                                            </Stack>
+                                                                        )
+                                                                    })}
+                                                                </Stack>
+                                                            </Collapse>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                </React.Fragment>
+                                            )
+                                        })}
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
+                        )}
 
-                                            <Stack>
-                                                <Typography>Total Amount</Typography>
-                                                <Typography>${order.total}</Typography>
-                                            </Stack>
-                                        </Stack>
-
-                                        <Stack>
-                                            <Typography>Item: {order.item.length}</Typography>
-                                        </Stack>
-                                    </Stack>
-
-                                    {/* middle */}
-                                    <Stack rowGap={2}>
-
-                                        {
-                                            order.item.map((product)=>(
-                                                
-                                                <Stack mt={2} flexDirection={'row'} rowGap={is768?'2rem':''} columnGap={4} flexWrap={is768?"wrap":"nowrap"}>
-                                                    
-                                                    <Stack>
-                                                        <img style={{width:"100%",aspectRatio:is480?3/2:1/1,objectFit:"contain"}} src={product.product.images[0]} alt="" />
-                                                    </Stack>
-
-                                                    <Stack rowGap={1} width={'100%'}>
-
-                                                        <Stack flexDirection={'row'} justifyContent={'space-between'}>
-                                                            <Stack>
-                                                                <Typography variant='h6' fontSize={'1rem'} fontWeight={500}>{product.product.title}</Typography>
-                                                                <Typography variant='body1'  fontSize={'.9rem'}  color={'text.secondary'}>{product.product.brand.name}</Typography>
-                                                                <Typography color={'text.secondary'} fontSize={'.9rem'}>Qty: {product.quantity}</Typography>
-                                                            </Stack>
-                                                            <Typography>${product.product.price}</Typography>
-                                                        </Stack>
-
-                                                        <Typography color={'text.secondary'}>{product.product.description}</Typography>
-
-                                                        <Stack mt={2} alignSelf={is480?"flex-start":'flex-end'} flexDirection={'row'} columnGap={2} >
-                                                            <Button size='small' component={Link} to={`/product-details/${product.product._id}`} variant='outlined'>View Product</Button>
-                                                            {
-                                                                cartItems.some((cartItem)=>cartItem.product._id===product.product._id)?
-                                                                <Button  size='small' variant='contained' component={Link} to={"/cart"}>Already in Cart</Button>
-                                                                :<Button  size='small' variant='contained' onClick={()=>handleAddToCart(product.product)}>Buy Again</Button>
-                                                            }
-                                                        </Stack>
-
-                                                    </Stack>
-
-
-
-                                                </Stack>
-                                            ))
-                                        }
-
-                                    </Stack>
-
-                                    {/* lower */}
-                                    <Stack mt={2} flexDirection={'row'} justifyContent={'space-between'}>
-                                        <Typography mb={2}>Status : {order.status}</Typography>
-                                    </Stack>
-                                        
-                                </Stack>
-                            ))
-
-                        }
-                        
                         {/* no orders animation */}
                         {
                         !orders.length && 
@@ -192,7 +301,7 @@ export const UserOrders = () => {
                                     <Lottie animationData={noOrdersAnimation}/>
                                 </Stack>
 
-                                <Typography textAlign={'center'} alignSelf={'center'} variant='h6' >oh! Looks like you haven't been shopping lately</Typography>
+                                <Typography textAlign={'center'} alignSelf={'center'} variant='h6' >{"لا توجد طلبات حتى الآن. ابدأ التسوق الآن!"}</Typography>
 
                             </Stack>
                         }

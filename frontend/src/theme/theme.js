@@ -2,18 +2,59 @@ import { createTheme } from "@mui/material/styles";
 
 export const theme = createTheme({
   palette: {
+    mode: "light",
     primary: {
-      main:"#000000",
-      light:"#ffffff",
-      dark:'#DB4444',
-      customBlack:"#191919"
+      main:"#c62828",
+      light:"#ffebee",
+      dark:"#8e0000",
+      contrastText:"#ffffff",
+      customBlack:"#29232b"
     },
     secondary:{
-      main:"#background.paper"
+      main:"#29232b",
+      light:"#70666a",
+      dark:"#171317"
+    },
+    error:{
+      main:"#d32f2f"
+    },
+    background:{
+      default:"#ffffff",
+      paper:"#ffffff"
+    },
+    text:{
+      primary:"#29232b",
+      secondary:"#70666a"
     },
   },
 
-  
+  components:{
+    MuiButton:{
+      styleOverrides:{
+        root:{
+          borderRadius:8,
+          textTransform:"none",
+          fontWeight:600
+        }
+      }
+    },
+    MuiLink:{
+      styleOverrides:{
+        root:{
+          color:"#c62828",
+          textDecorationColor:"rgba(198,40,40,.4)"
+        }
+      }
+    },
+    MuiCssBaseline:{
+      styleOverrides:{
+        "::selection":{
+          backgroundColor:"#ffcdd2",
+          color:"#29232b"
+        }
+      }
+    }
+  },
 
   breakpoints: {
     values: {

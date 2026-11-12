@@ -1,24 +1,24 @@
-import React, { useEffect } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
-import { logoutAsync, selectLoggedInUser } from '../AuthSlice'
+import React, { useEffect, useRef } from 'react'
+import { useDispatch } from 'react-redux'
+import { logoutAsync } from '../AuthSlice'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'react-toastify'
 
 export const Logout = () => {
     const dispatch=useDispatch()
-    const loggedInUser=useSelector(selectLoggedInUser)
     const navigate=useNavigate()
+    const logoutStarted=useRef(false)
 
     useEffect(()=>{
-        dispatch(logoutAsync())
-    },[])
+        if(logoutStarted.current) return
+        logoutStarted.current=true
 
-    useEffect(()=>{
-        if(!loggedInUser){
-            navigate("/login")
-        }
-    },[loggedInUser])
+        const logoutRequest=dispatch(logoutAsync())
+        navigate("/login",{replace:true})
+        logoutRequest
+            .unwrap()
+            .catch((error)=>toast.error(error?.message || "Unable to log out. Please try again."))
+    },[dispatch,navigate])
 
-  return (
-    <></>
-  )
+    return null
 }

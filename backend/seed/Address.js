@@ -22,7 +22,7 @@ const addresses = [
     phoneNumber: "9846286159",
     postalCode: "301273",
     country: "India",
-    type: "Buisness",
+    type: "Buisness",    
     __v: 0,
   },
 ];

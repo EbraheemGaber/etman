@@ -35,12 +35,12 @@ export const OrderSuccessPage = () => {
             </Box>
 
             <Stack mt={2} textAlign={'center'} justifyContent={'center'} alignItems={'center'} rowGap={1}>
-                <Typography variant='h6' fontWeight={400}>Hey {userDetails?.name}</Typography>
-                <Typography variant='h5' >Your Order #{currentOrder?._id} is confirmed</Typography>
-                <Typography variant='body2' color='text.secondary'>Thankyou for shopping with us❤️</Typography>
+                <Typography variant='h6' fontWeight={400}>{'Hey'} {userDetails?.name}</Typography>
+                <Typography variant='h5' >{'Your Order'} #{currentOrder?._id} {'is confirmed'}</Typography>
+                <Typography variant='body2' color='text.secondary'>{'Thankyou for shopping with us❤️'}</Typography>
             </Stack>
 
-            <Button component={Link} to={'/orders'} onClick={()=>dispatch(resetCurrentOrder())} size={is480?"small":""}  variant='contained'>Check order status in my orders</Button>
+            <Button component={Link} to={'/orders'} onClick={()=>dispatch(resetCurrentOrder())} size={is480?"small":""}  variant='contained'>{'Check order status in my orders'}</Button>
         </Stack>
 
     </Stack>

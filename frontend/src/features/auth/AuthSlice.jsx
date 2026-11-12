@@ -12,6 +12,7 @@ const initialState={
     loginStatus:"idle",
     loginError:null,
     loggedInUser:null,
+    logoutStatus:'idle',
     otpVerificationStatus:"idle",
     otpVerificationError:null,
     forgotPasswordStatus:"idle",
@@ -200,13 +201,16 @@ const authSlice=createSlice({
 
             .addCase(logoutAsync.pending,(state)=>{
                 state.status='pending'
+                state.logoutStatus='pending'
             })
             .addCase(logoutAsync.fulfilled,(state)=>{
                 state.status='fullfilled'
+                state.logoutStatus='fullfilled'
                 state.loggedInUser=null
             })
             .addCase(logoutAsync.rejected,(state,action)=>{
                 state.status='rejected'
+                state.logoutStatus='rejected'
                 state.errors=action.error
             })
 
@@ -241,6 +245,7 @@ export const selectSignupStatus=(state)=>state.AuthSlice.signupStatus
 export const selectSignupError=(state)=>state.AuthSlice.signupError
 export const selectLoginStatus=(state)=>state.AuthSlice.loginStatus
 export const selectLoginError=(state)=>state.AuthSlice.loginError
+export const selectLogoutStatus=(state)=>state.AuthSlice.logoutStatus
 export const selectOtpVerificationStatus=(state)=>state.AuthSlice.otpVerificationStatus
 export const selectOtpVerificationError=(state)=>state.AuthSlice.otpVerificationError
 export const selectForgotPasswordStatus=(state)=>state.AuthSlice.forgotPasswordStatus
@@ -254,4 +259,3 @@ export const selectResetPasswordError=(state)=>state.AuthSlice.resetPasswordErro
 export const {clearAuthSuccessMessage,clearAuthErrors,resetAuthStatus,clearSignupError,resetSignupStatus,clearLoginError,resetLoginStatus,clearOtpVerificationError,resetOtpVerificationStatus,clearResendOtpError,clearResendOtpSuccessMessage,resetResendOtpStatus,clearForgotPasswordError,clearForgotPasswordSuccessMessage,resetForgotPasswordStatus,clearResetPasswordError,clearResetPasswordSuccessMessage,resetResetPasswordStatus}=authSlice.actions
 
 export default authSlice.reducer
-

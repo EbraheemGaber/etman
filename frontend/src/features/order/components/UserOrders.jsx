@@ -2,13 +2,30 @@ import React, { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { getOrderByUserIdAsync, resetOrderFetchStatus, selectOrderFetchStatus, selectOrders } from '../OrderSlice'
 import { selectLoggedInUser } from '../../auth/AuthSlice'
-import { Button, IconButton, Paper, Stack, Typography, useMediaQuery, useTheme } from '@mui/material'
+import {
+    Button,
+    Chip,
+    Collapse,
+    IconButton,
+    Paper,
+    Stack,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    Typography,
+    useMediaQuery,
+    useTheme
+} from '@mui/material'
 import {Link} from 'react-router-dom'
 import { addToCartAsync, resetCartItemAddStatus, selectCartItemAddStatus, selectCartItems } from '../../cart/CartSlice'
 import Lottie from 'lottie-react'
 import { loadingAnimation, noOrdersAnimation } from '../../../assets'
 import { toast } from 'react-toastify'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'
 import {motion} from 'framer-motion'
 
 
@@ -21,12 +38,11 @@ export const UserOrders = () => {
     const orderFetchStatus=useSelector(selectOrderFetchStatus)
 
     const theme=useTheme()
-    const is1200=useMediaQuery(theme.breakpoints.down("1200"))
-    const is768=useMediaQuery(theme.breakpoints.down("768"))
     const is660=useMediaQuery(theme.breakpoints.down(660))
     const is480=useMediaQuery(theme.breakpoints.down("480"))
 
     const cartItemAddStatus=useSelector(selectCartItemAddStatus)
+    const [expandedOrderId,setExpandedOrderId]=React.useState('')
     
     useEffect(()=>{
         window.scrollTo({
@@ -72,14 +88,14 @@ export const UserOrders = () => {
 
 
   return (
-    <Stack justifyContent={'center'} alignItems={'center'}>
+    <Stack width="100%" minWidth={0} justifyContent={'center'} alignItems={'center'}>
         {
             orderFetchStatus==='pending'?
             <Stack width={is480?'auto':'25rem'} height={'calc(100vh - 4rem)'} justifyContent={'center'} alignItems={'center'}>
                 <Lottie animationData={loadingAnimation}/>
             </Stack>
             :
-            <Stack width={is1200?"auto":"60rem"} p={is480?2:4} mb={'5rem'}>
+            <Stack width="100%" maxWidth="60rem" minWidth={0} boxSizing="border-box" p={is480?2:4} mb={'5rem'}>
                 
                 {/* heading and navigation */}
                 <Stack flexDirection={'row'} columnGap={2} >
@@ -91,98 +107,158 @@ export const UserOrders = () => {
     
 
                     <Stack rowGap={1} >
-                        <Typography variant='h4' fontWeight={500}>Order history</Typography>
-                        <Typography sx={{wordWrap:"break-word"}} color={'text.secondary'}>Check the status of recent orders, manage returns, and discover similar products.</Typography>
+                        <Typography variant='h4' fontWeight={500}>{'Order history'}</Typography>
+                        <Typography sx={{wordWrap:"break-word"}} color={'text.secondary'}>{'Check the status of recent orders, manage returns, and discover similar products.'}</Typography>
                     </Stack>
 
                 </Stack>
 
                 {/* orders */}
-                <Stack mt={5} rowGap={5}>
+                <Stack mt={5} width="100%" minWidth={0}>
+                        {orders.length>0 && (
+                            <TableContainer
+                                component={Paper}
+                                elevation={1}
+                                tabIndex={0}
+                                aria-label="Scrollable order history table"
+                                sx={{
+                                    width:'100%',
+                                    maxWidth:'100%',
+                                    minWidth:0,
+                                    borderRadius:2,
+                                    overflowX:'auto',
+                                    overscrollBehaviorX:'contain',
+                                    WebkitOverflowScrolling:'touch'
+                                }}
+                            >
+                                <Table size="small" sx={{minWidth:700}} aria-label={"Order history"}>
+                                    <TableHead>
+                                        <TableRow sx={{'& th':{color:'text.secondary',fontWeight:600,whiteSpace:'nowrap',borderBottom:'1px solid #e0e0e0'}}}>
+                                            <TableCell padding="checkbox" />
+                                            <TableCell>{'Order'}</TableCell>
+                                            <TableCell>{'Items'}</TableCell>
+                                            <TableCell align="right">{'Total'}</TableCell>
+                                            <TableCell>{'Order date'}</TableCell>
+                                            <TableCell>{'Status'}</TableCell>
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        {orders.map((order)=>{
+                                            const expanded=expandedOrderId===order._id
+                                            const orderItems=order.item || []
+                                            const statusColors={
+                                                Pending:{bgcolor:'#dfc9f7',color:'#7c59a4'},
+                                                Dispatched:{bgcolor:'#feed80',color:'#927b1e'},
+                                                'Out for delivery':{bgcolor:'#AACCFF',color:'#4793AA'},
+                                                Delivered:{bgcolor:'#b3f5ca',color:'#548c6a'},
+                                                Cancelled:{bgcolor:'#ffebee',color:'#c62828'}
+                                            }
 
-                        {/* orders mapping */}
-                        {
-                            orders && orders.map((order)=>(
-                                <Stack p={is480?0:2} component={is480?"":Paper} elevation={1} rowGap={2}>
-                                    
-                                    {/* upper */}
-                                    <Stack flexDirection={'row'} rowGap={'1rem'}  justifyContent={'space-between'} flexWrap={'wrap'}>
-                                        <Stack flexDirection={'row'} columnGap={4} rowGap={'1rem'} flexWrap={'wrap'}>
-                                            <Stack>
-                                                <Typography>Order Number</Typography>
-                                                <Typography color={'text.secondary'}>{order._id}</Typography>
-                                            </Stack>
+                                            return (
+                                                <React.Fragment key={order._id}>
+                                                    <TableRow hover sx={{'& td':{py:0.75,verticalAlign:'middle'},...(expanded?{'& td':{py:0.75,verticalAlign:'middle',borderBottom:0}}:{})}}>
+                                                        <TableCell padding="checkbox">
+                                                            <IconButton
+                                                                size="small"
+                                                                aria-label={expanded?'Hide order details':'Show order details'}
+                                                                aria-expanded={expanded}
+                                                                onClick={()=>setExpandedOrderId(expanded?'':order._id)}
+                                                                sx={{transform:expanded?'rotate(180deg)':'rotate(0deg)',transition:'transform 200ms ease'}}
+                                                            >
+                                                                <KeyboardArrowDownIcon fontSize="small"/>
+                                                            </IconButton>
+                                                        </TableCell>
+                                                        <TableCell sx={{whiteSpace:'nowrap'}}>
+                                                            <Typography variant="body2" fontWeight={600}>
+                                                                #{order._id?.slice(-6).toUpperCase() || '—'}
+                                                            </Typography>
+                                                        </TableCell>
+                                                        <TableCell sx={{whiteSpace:'nowrap'}}>
+                                                            {orderItems.length} {orderItems.length===1?'item':'items'}
+                                                        </TableCell>
+                                                        <TableCell align="right" sx={{whiteSpace:'nowrap',fontWeight:600}}>
+                                                            ${Number(order.total || 0).toLocaleString()}
+                                                        </TableCell>
+                                                        <TableCell sx={{whiteSpace:'nowrap'}}>
+                                                            {Number.isNaN(new Date(order.createdAt).getTime())?'—':new Date(order.createdAt).toLocaleDateString()}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Chip
+                                                                label={order.status}
+                                                                size="small"
+                                                                sx={statusColors[order.status] || {bgcolor:'#f5f5f5'}}
+                                                            />
+                                                        </TableCell>
+                                                    </TableRow>
+                                                    <TableRow>
+                                                        <TableCell colSpan={6} sx={{p:0,borderBottom:expanded?'1px solid rgba(224, 224, 224, 1)':0}}>
+                                                            <Collapse in={expanded} timeout={220} unmountOnExit>
+                                                                <Stack spacing={1.5} sx={{px:3,py:2,backgroundColor:'action.hover'}}>
+                                                                    <Stack direction={{xs:'column',sm:'row'}} justifyContent="space-between" spacing={1}>
+                                                                        <Typography variant="subtitle2">
+                                                                            {'Order'} #{order._id?.slice(-6).toUpperCase() || '—'} · {order.paymentMode || 'Payment method unavailable'}
+                                                                        </Typography>
+                                                                        <Typography variant="body2" color="text.secondary">
+                                                                            Total: ${Number(order.total || 0).toLocaleString()}
+                                                                        </Typography>
+                                                                    </Stack>
+                                                                    {orderItems.map((entry,index)=>{
+                                                                        const product=entry.product || {}
+                                                                        const alreadyInCart=cartItems.some((cartItem)=>cartItem.product?._id===product._id)
 
-                                            <Stack>
-                                                <Typography>Date Placed</Typography>
-                                                <Typography color={'text.secondary'}>{new Date(order.createdAt).toDateString()}</Typography>
-                                            </Stack>
+                                                                        return (
+                                                                            <Stack
+                                                                                key={`${order._id}-${index}`}
+                                                                                direction={{xs:'column',sm:'row'}}
+                                                                                alignItems={{xs:'flex-start',sm:'center'}}
+                                                                                spacing={1.5}
+                                                                                sx={{py:1,borderTop:'1px solid',borderColor:'divider'}}
+                                                                            >
+                                                                                <img
+                                                                                    style={{width:56,height:56,objectFit:'contain',borderRadius:6,background:'#fff'}}
+                                                                                    src={product.thumbnail || product.images?.[0] || ''}
+                                                                                    alt={product.title || 'Product'}
+                                                                                />
+                                                                                <Stack flex={1} spacing={0.25}>
+                                                                                    <Typography variant="body2" fontWeight={600}>{product.title || 'Product'}</Typography>
+                                                                                    {product.brand?.name && (
+                                                                                        <Typography variant="caption" color="text.secondary">{product.brand.name}</Typography>
+                                                                                    )}
+                                                                                    <Typography variant="caption" color="text.secondary">
+                                                                                        Quantity: {entry.quantity} · ${Number(product.price || 0).toLocaleString()} each
+                                                                                    </Typography>
+                                                                                </Stack>
+                                                                                {product._id && (
+                                                                                    <Stack direction="row" spacing={1}>
+                                                                                        <Button size="small" component={Link} to={`/product-details/${product._id}`} variant="outlined">
+                                                                                            {'View product'}
+                                                                                        </Button>
+                                                                                        {alreadyInCart ? (
+                                                                                            <Button size="small" variant="contained" component={Link} to="/cart">
+                                                                                                {'Already in cart'}
+                                                                                            </Button>
+                                                                                        ) : (
+                                                                                            <Button size="small" variant="contained" onClick={()=>handleAddToCart(product)}>
+                                                                                                {'Buy again'}
+                                                                                            </Button>
+                                                                                        )}
+                                                                                    </Stack>
+                                                                                )}
+                                                                            </Stack>
+                                                                        )
+                                                                    })}
+                                                                </Stack>
+                                                            </Collapse>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                </React.Fragment>
+                                            )
+                                        })}
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
+                        )}
 
-                                            <Stack>
-                                                <Typography>Total Amount</Typography>
-                                                <Typography>${order.total}</Typography>
-                                            </Stack>
-                                        </Stack>
-
-                                        <Stack>
-                                            <Typography>Item: {order.item.length}</Typography>
-                                        </Stack>
-                                    </Stack>
-
-                                    {/* middle */}
-                                    <Stack rowGap={2}>
-
-                                        {
-                                            order.item.map((product)=>(
-                                                
-                                                <Stack mt={2} flexDirection={'row'} rowGap={is768?'2rem':''} columnGap={4} flexWrap={is768?"wrap":"nowrap"}>
-                                                    
-                                                    <Stack>
-                                                        <img style={{width:"100%",aspectRatio:is480?3/2:1/1,objectFit:"contain"}} src={product.product.images[0]} alt="" />
-                                                    </Stack>
-
-                                                    <Stack rowGap={1} width={'100%'}>
-
-                                                        <Stack flexDirection={'row'} justifyContent={'space-between'}>
-                                                            <Stack>
-                                                                <Typography variant='h6' fontSize={'1rem'} fontWeight={500}>{product.product.title}</Typography>
-                                                                <Typography variant='body1'  fontSize={'.9rem'}  color={'text.secondary'}>{product.product.brand.name}</Typography>
-                                                                <Typography color={'text.secondary'} fontSize={'.9rem'}>Qty: {product.quantity}</Typography>
-                                                            </Stack>
-                                                            <Typography>${product.product.price}</Typography>
-                                                        </Stack>
-
-                                                        <Typography color={'text.secondary'}>{product.product.description}</Typography>
-
-                                                        <Stack mt={2} alignSelf={is480?"flex-start":'flex-end'} flexDirection={'row'} columnGap={2} >
-                                                            <Button size='small' component={Link} to={`/product-details/${product.product._id}`} variant='outlined'>View Product</Button>
-                                                            {
-                                                                cartItems.some((cartItem)=>cartItem.product._id===product.product._id)?
-                                                                <Button  size='small' variant='contained' component={Link} to={"/cart"}>Already in Cart</Button>
-                                                                :<Button  size='small' variant='contained' onClick={()=>handleAddToCart(product.product)}>Buy Again</Button>
-                                                            }
-                                                        </Stack>
-
-                                                    </Stack>
-
-
-
-                                                </Stack>
-                                            ))
-                                        }
-
-                                    </Stack>
-
-                                    {/* lower */}
-                                    <Stack mt={2} flexDirection={'row'} justifyContent={'space-between'}>
-                                        <Typography mb={2}>Status : {order.status}</Typography>
-                                    </Stack>
-                                        
-                                </Stack>
-                            ))
-
-                        }
-                        
                         {/* no orders animation */}
                         {
                         !orders.length && 
@@ -192,7 +268,7 @@ export const UserOrders = () => {
                                     <Lottie animationData={noOrdersAnimation}/>
                                 </Stack>
 
-                                <Typography textAlign={'center'} alignSelf={'center'} variant='h6' >oh! Looks like you haven't been shopping lately</Typography>
+                                <Typography textAlign={'center'} alignSelf={'center'} variant='h6' >{"oh! Looks like you haven't been shopping lately"}</Typography>
 
                             </Stack>
                         }

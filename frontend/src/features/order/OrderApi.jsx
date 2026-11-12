@@ -1,4 +1,5 @@
 import {axiosi} from '../../config/axios'
+import {fetchCachedGet} from '../../config/apiQuery'
 
 
 export const createOrder=async(order)=>{
@@ -12,8 +13,7 @@ export const createOrder=async(order)=>{
 
 export const getOrderByUserId=async(id)=>{
     try {
-        const res=await axiosi.get(`/orders/user/${id}`)
-        return res.data
+        return await fetchCachedGet(`/orders/user/${id}`)
     } catch (error) {
         throw error.response.data
     }
@@ -21,11 +21,14 @@ export const getOrderByUserId=async(id)=>{
 
 export const getAllOrders=async()=>{
     try {
-        const res=await axiosi.get(`/orders`)
-        return res.data
+        return await fetchCachedGet(`/orders`)
     } catch (error) {
         throw error.response.data
     }
+}
+
+export const getOrderStatistics=async()=>{
+    return await fetchCachedGet("/orders/statistics")
 }
 
 export const updateOrderById=async(update)=>{

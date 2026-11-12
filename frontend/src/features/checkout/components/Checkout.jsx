@@ -12,6 +12,7 @@ import { resetCartByUserIdAsync, selectCartItems } from '../../cart/CartSlice'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { SHIPPING, TAXES } from '../../../constants'
 import {motion} from 'framer-motion'
+import { FormCard } from '../../../components/FormCard'
 
 
 export const Checkout = () => {
@@ -19,7 +20,7 @@ export const Checkout = () => {
     const status=''
     const addresses=useSelector(selectAddresses)
     const [selectedAddress,setSelectedAddress]=useState(addresses[0])
-    const [selectedPaymentMethod,setSelectedPaymentMethod]=useState('cash')
+    const [selectedPaymentMethod,setSelectedPaymentMethod]=useState('COD')
     const { register, handleSubmit, watch, reset,formState: { errors }} = useForm()
     const dispatch=useDispatch()
     const loggedInUser=useSelector(selectLoggedInUser)
@@ -70,59 +71,59 @@ export const Checkout = () => {
                 <motion.div  whileHover={{x:-5}}>
                     <IconButton component={Link} to={"/cart"}><ArrowBackIcon fontSize={is480?"medium":'large'}/></IconButton>
                 </motion.div>
-                <Typography variant='h4'>Shipping Information</Typography>
+                <Typography variant='h4'>{'Shipping Information'}</Typography>
             </Stack>
 
             {/* address form */}
-            <Stack component={'form'} noValidate rowGap={2} onSubmit={handleSubmit(handleAddAddress)}>
+            <FormCard noValidate rowGap={2} onSubmit={handleSubmit(handleAddAddress)}>
                     <Stack>
-                        <Typography  gutterBottom>Type</Typography>
-                        <TextField placeholder='Eg. Home, Buisness' {...register("type",{required:true})}/>
+                        <Typography  gutterBottom>{'Type'}</Typography>
+                        <TextField placeholder={'Eg. Home, Buisness'} {...register("type",{required:true})}/>
                     </Stack>
 
 
                     <Stack>
-                        <Typography gutterBottom>Street</Typography>
+                        <Typography gutterBottom>{'Street'}</Typography>
                         <TextField {...register("street",{required:true})}/>
                     </Stack>
 
                     <Stack>
-                        <Typography gutterBottom>Country</Typography>
+                        <Typography gutterBottom>{'Country'}</Typography>
                         <TextField {...register("country",{required:true})}/>
                     </Stack>
 
                     <Stack>
-                        <Typography  gutterBottom>Phone Number</Typography>
+                        <Typography  gutterBottom>{'Phone Number'}</Typography>
                         <TextField type='number' {...register("phoneNumber",{required:true})}/>
                     </Stack>
 
                     <Stack flexDirection={'row'}>
                         <Stack width={'100%'}>
-                            <Typography gutterBottom>City</Typography>
+                            <Typography gutterBottom>{'City'}</Typography>
                             <TextField  {...register("city",{required:true})}/>
                         </Stack>
                         <Stack width={'100%'}>
-                            <Typography gutterBottom>State</Typography>
+                            <Typography gutterBottom>{'State'}</Typography>
                             <TextField  {...register("state",{required:true})}/>
                         </Stack>
                         <Stack width={'100%'}>
-                            <Typography gutterBottom>Postal Code</Typography>
+                            <Typography gutterBottom>{'Postal Code'}</Typography>
                             <TextField type='number' {...register("postalCode",{required:true})}/>
                         </Stack>
                     </Stack>
 
                     <Stack flexDirection={'row'} alignSelf={'flex-end'} columnGap={1}>
-                        <LoadingButton loading={status==='pending'} type='submit' variant='contained'>add</LoadingButton>
-                        <Button color='error' variant='outlined' onClick={()=>reset()}>Reset</Button>
+                        <LoadingButton loading={status==='pending'} type='submit' variant='contained'>{'add'}</LoadingButton>
+                        <Button color='error' variant='outlined' onClick={()=>reset()}>{'Reset'}</Button>
                     </Stack>
-            </Stack>
+            </FormCard>
 
             {/* existing address */}
             <Stack rowGap={3}>
 
                 <Stack>
-                    <Typography variant='h6'>Address</Typography>
-                    <Typography variant='body2' color={'text.secondary'}>Choose from existing Addresses</Typography>
+                    <Typography variant='h6'>{'Address'}</Typography>
+                    <Typography variant='body2' color={'text.secondary'}>{'Choose from existing Addresses'}</Typography>
                 </Stack>
 
                 <Grid container gap={2} width={is900?"auto":'50rem'} justifyContent={'flex-start'} alignContent={'flex-start'}>
@@ -154,20 +155,20 @@ export const Checkout = () => {
             <Stack rowGap={3}>
 
                     <Stack>
-                        <Typography variant='h6'>Payment Methods</Typography>
-                        <Typography variant='body2' color={'text.secondary'}>Please select a payment method</Typography>
+                        <Typography variant='h6'>{'Payment Methods'}</Typography>
+                        <Typography variant='body2' color={'text.secondary'}>{'Please select a payment method'}</Typography>
                     </Stack>
                     
                     <Stack rowGap={2}>
 
                         <Stack flexDirection={'row'} justifyContent={'flex-start'} alignItems={'center'}>
                             <Radio value={selectedPaymentMethod} name='paymentMethod' checked={selectedPaymentMethod==='COD'} onChange={()=>setSelectedPaymentMethod('COD')}/>
-                            <Typography>Cash</Typography>
+                            <Typography>{'Cash'}</Typography>
                         </Stack>
 
                         <Stack flexDirection={'row'} justifyContent={'flex-start'} alignItems={'center'}>
                             <Radio value={selectedPaymentMethod} name='paymentMethod' checked={selectedPaymentMethod==='CARD'} onChange={()=>setSelectedPaymentMethod('CARD')}/>
-                            <Typography>Card</Typography>
+                            <Typography>{'Card'}</Typography>
                         </Stack>
 
                     </Stack>
@@ -178,9 +179,9 @@ export const Checkout = () => {
 
         {/* right box */}
         <Stack  width={is900?'100%':'auto'} alignItems={is900?'flex-start':''}>
-            <Typography variant='h4'>Order summary</Typography>
+            <Typography variant='h4'>{'Order summary'}</Typography>
             <Cart checkout={true}/>
-            <LoadingButton fullWidth loading={orderStatus==='pending'} variant='contained' onClick={handleCreateOrder} size='large'>Pay and order</LoadingButton>
+            <LoadingButton fullWidth loading={orderStatus==='pending'} variant='contained' onClick={handleCreateOrder} size='large'>{'Pay and order'}</LoadingButton>
         </Stack>
 
     </Stack>

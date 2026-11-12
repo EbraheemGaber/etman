@@ -12,6 +12,12 @@ const initialState={
     successMessage:null
 }
 
+const sortOrdersNewestFirst=(orders)=>[...orders].sort((first,second)=>{
+    const firstDate=Date.parse(first.createdAt) || 0
+    const secondDate=Date.parse(second.createdAt) || 0
+    return secondDate-firstDate || String(second._id).localeCompare(String(first._id))
+})
+
 export const createOrderAsync=createAsyncThunk("orders/createOrderAsync",async(order)=>{
     const createdOrder=await createOrder(order)
     return createdOrder
@@ -53,7 +59,7 @@ const orderSlice=createSlice({
             })
             .addCase(createOrderAsync.fulfilled,(state,action)=>{
                 state.status='fulfilled'
-                state.orders.push(action.payload)
+                state.orders=sortOrdersNewestFirst([action.payload,...state.orders])
                 state.currentOrder=action.payload
             })
             .addCase(createOrderAsync.rejected,(state,action)=>{
@@ -66,7 +72,7 @@ const orderSlice=createSlice({
             })
             .addCase(getAllOrdersAsync.fulfilled,(state,action)=>{
                 state.orderFetchStatus='fulfilled'
-                state.orders=action.payload
+                state.orders=sortOrdersNewestFirst(action.payload)
             })
             .addCase(getAllOrdersAsync.rejected,(state,action)=>{
                 state.orderFetchStatus='rejected'
@@ -78,7 +84,7 @@ const orderSlice=createSlice({
             })
             .addCase(getOrderByUserIdAsync.fulfilled,(state,action)=>{
                 state.orderFetchStatus='fulfilled'
-                state.orders=action.payload
+                state.orders=sortOrdersNewestFirst(action.payload)
             })
             .addCase(getOrderByUserIdAsync.rejected,(state,action)=>{
                 state.orderFetchStatus='rejected'

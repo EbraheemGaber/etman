@@ -1,135 +1,449 @@
-import * as React from 'react';
-import AppBar from '@mui/material/AppBar';
-import Toolbar from '@mui/material/Toolbar';
-import IconButton from '@mui/material/IconButton';
-import Typography from '@mui/material/Typography';
-import Menu from '@mui/material/Menu';
-import Avatar from '@mui/material/Avatar';
-import Tooltip from '@mui/material/Tooltip';
-import MenuItem from '@mui/material/MenuItem';
-import { Link, useNavigate } from 'react-router-dom';
-import { Badge, Button, Chip, Stack, useMediaQuery, useTheme } from '@mui/material';
-import { useDispatch, useSelector } from 'react-redux';
-import { selectUserInfo } from '../../user/UserSlice';
-import ShoppingCartOutlinedIcon from '@mui/icons-material/ShoppingCartOutlined';
-import { selectCartItems } from '../../cart/CartSlice';
-import { selectLoggedInUser } from '../../auth/AuthSlice';
-import { selectWishlistItems } from '../../wishlist/WishlistSlice';
-import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
-import TuneIcon from '@mui/icons-material/Tune';
-import { selectProductIsFilterOpen, toggleFilters } from '../../products/ProductSlice';
+import * as React from 'react'
+import AppBar from '@mui/material/AppBar'
+import Toolbar from '@mui/material/Toolbar'
+import IconButton from '@mui/material/IconButton'
+import Typography from '@mui/material/Typography'
+import Menu from '@mui/material/Menu'
+import Avatar from '@mui/material/Avatar'
+import Tooltip from '@mui/material/Tooltip'
+import MenuItem from '@mui/material/MenuItem'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Autocomplete, Badge, BottomNavigation, BottomNavigationAction, Box, Button, InputAdornment, Stack, TextField, useMediaQuery, useTheme } from '@mui/material'
+import { useDispatch, useSelector } from 'react-redux'
+import { selectUserInfo } from '../../user/UserSlice'
+import ShoppingCartOutlinedIcon from '@mui/icons-material/ShoppingCartOutlined'
+import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined'
+import PersonOutlineRoundedIcon from '@mui/icons-material/PersonOutlineRounded'
+import SearchRoundedIcon from '@mui/icons-material/SearchRounded'
+import { selectCartItems } from '../../cart/CartSlice'
+import { selectLoggedInUser } from '../../auth/AuthSlice'
+import { selectWishlistItems } from '../../wishlist/WishlistSlice'
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder'
+import TuneIcon from '@mui/icons-material/Tune'
+import { selectProductIsFilterOpen, toggleFilters } from '../../products/ProductSlice'
+import { selectCategories } from '../../categories/CategoriesSlice'
+import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined'
 
-
+const brandRed = '#c62828'
 
 export const Navbar=({isProductList=false})=> {
-  const [anchorElNav, setAnchorElNav] = React.useState(null);
-  const [anchorElUser, setAnchorElUser] = React.useState(null);
+  const [anchorElUser, setAnchorElUser] = React.useState(null)
   const userInfo=useSelector(selectUserInfo)
   const cartItems=useSelector(selectCartItems)
   const loggedInUser=useSelector(selectLoggedInUser)
+  const categories=useSelector(selectCategories)
   const navigate=useNavigate()
   const dispatch=useDispatch()
   const theme=useTheme()
   const is480=useMediaQuery(theme.breakpoints.down(480))
-
+  const isMobile=useMediaQuery(theme.breakpoints.down('sm'))
+  const location=useLocation()
   const wishlistItems=useSelector(selectWishlistItems)
   const isProductFilterOpen=useSelector(selectProductIsFilterOpen)
+  const isCustomer=!loggedInUser?.isAdmin && !loggedInUser?.isSalesperson
+  const isAdmin=Boolean(loggedInUser?.isAdmin)
+  const isSalesperson=Boolean(loggedInUser?.isSalesperson)
+  const isMobileStorefront=isCustomer && isMobile
 
   const handleOpenUserMenu = (event) => {
-    setAnchorElUser(event.currentTarget);
-  };
+    setAnchorElUser(event.currentTarget)
+  }
 
   const handleCloseUserMenu = () => {
-    setAnchorElUser(null);
-  };
+    setAnchorElUser(null)
+  }
 
   const handleToggleFilters=()=>{
     dispatch(toggleFilters())
   }
 
   const settings = [
-    {name:"Home",to:"/"},
-    {name:'Profile',to:loggedInUser?.isAdmin?"/admin/profile":"/profile"},
-    {name:loggedInUser?.isAdmin?'Orders':'My orders',to:loggedInUser?.isAdmin?"/admin/orders":"/orders"},
-    {name:'Logout',to:"/logout"},
-  ];
+    {name:isSalesperson?'الرئيسية':'Home',to:isSalesperson?"/sales/request-order":"/"},
+    {name:isSalesperson?'الملف الشخصي':'Profile',to:loggedInUser?.isAdmin?"/admin/profile":"/profile"},
+    ...(!isSalesperson && !isAdmin?[{name:'My orders',to:'/orders'}]:[]),
+    ...(isAdmin?[{name:'Manage salespeople',to:'/admin/salespeople'}]:[]),
+    ...(isSalesperson?[{name:'لوحة المبيعات',to:'/sales/dashboard'}]:[]),
+  ]
 
   return (
-    <AppBar position="sticky" sx={{backgroundColor:"white",boxShadow:"none",color:"text.primary"}}>
-        <Toolbar sx={{p:1,height:"4rem",display:"flex",justifyContent:"space-around"}}>
-
-          <Typography variant="h6" noWrap component="a" href="/" sx={{ mr: 2, display: { xs: 'none', md: 'flex' },fontWeight: 700, letterSpacing: '.3rem', color: 'inherit', textDecoration: 'none', }}>
-            MERN SHOP
+    <>
+    <AppBar
+      position="sticky"
+      dir="ltr"
+      lang={isSalesperson?'ar':undefined}
+      sx={{
+        backgroundColor:brandRed,
+        boxShadow:"none",
+        color:"#fff",
+        ...(isSalesperson?{fontFamily:'Cairo, Tahoma, sans-serif','& *:not(svg)':{fontFamily:'Cairo, Tahoma, sans-serif'}}:{})
+      }}
+    >
+      <Toolbar sx={{
+        minHeight:{xs:'3.75rem',sm:'4.25rem'},
+        px:{xs:1.5,sm:3},
+        gap:{xs:1,sm:2},
+        display:"flex",
+        justifyContent:"space-between"
+      }}>
+        <Stack direction="row" alignItems="center" spacing={{xs:.75,sm:1.5}} sx={{minWidth:0,flexShrink:0}}>
+          <Typography
+            variant="h6"
+            noWrap
+            component={Link}
+            to={isSalesperson?"/sales/request-order":isAdmin?"/admin/orders":"/"}
+            sx={{
+              display:'flex',
+              alignItems:'center',
+              color:'inherit',
+              textDecoration:'none',
+              fontWeight:800,
+              letterSpacing:{xs:'.08rem',sm:'.16rem'},
+              fontSize:{xs:'.95rem',sm:'1.2rem'}
+            }}
+          >
+            ETMAN GROUP
           </Typography>
+        </Stack>
 
+        {isAdmin && (
+          <Box
+            component="nav"
+            aria-label={'Admin navigation'}
+            sx={{
+              display:'flex',
+              justifyContent:'center',
+              alignItems:'center',
+              gap:{xs:.5,sm:2},
+              flex:1,
+              minWidth:0,
+              overflowX:'auto',
+              whiteSpace:'nowrap',
+              scrollbarWidth:'none',
+              '&::-webkit-scrollbar':{display:'none'}
+            }}
+          >
+            {[
+              {name:'احصائيات',to:'/admin/statistics'},
+              {name:'طلبات المندوبين',to:'/admin/sales-requests'},
+              {name:'طلبات العملاء',to:'/admin/orders'}
+            ].map((item)=>(
+              <Button
+                key={item.to}
+                component={Link}
+                to={item.to}
+                size="small"
+                sx={{
+                  flexShrink:0,
+                  color:'inherit',
+                  fontSize:{xs:'.68rem',sm:'.85rem'},
+                  px:{xs:.75,sm:1.25},
+                  '&:hover':{bgcolor:'rgba(255,255,255,.12)'}
+                }}
+              >
+                {item.name}
+              </Button>
+            ))}
+          </Box>
+        )}
 
+        {loggedInUser?.isSalesperson && (
+          <Box
+            component="nav"
+            aria-label="التنقل الخاص بمندوب المبيعات"
+            sx={{display:'flex',alignItems:'center',gap:{xs:.5,sm:1},flex:1,minWidth:0}}
+          >
+            <Button
+              component={Link}
+              to="/sales/dashboard"
+              size="small"
+              sx={{flexShrink:0,color:'inherit',fontSize:{xs:'.68rem',sm:'.85rem'},px:{xs:.75,sm:1.25}}}
+            >
+              {'لوحة التحكم'}
+            </Button>
+            <Button
+              component={Link}
+              to="/sales/request-order"
+              size="small"
+              sx={{flexShrink:0,color:'inherit',fontSize:{xs:'.68rem',sm:'.85rem'},px:{xs:.75,sm:1.25}}}
+            >
+              {'طلب مبيعات'}
+            </Button>
+          </Box>
+        )}
 
-          <Stack flexDirection={'row'} alignItems={'center'} justifyContent={'center'} columnGap={2}>
-            <Tooltip title="Open settings">
-              <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
-                <Avatar alt={userInfo?.name} src="null" />
+        {isCustomer && categories.length > 0 && (
+          <Autocomplete
+            options={categories}
+            getOptionLabel={(category)=>category?.name || ''}
+            isOptionEqualToValue={(option,value)=>option._id===value._id}
+            onChange={(_,category)=>{
+              if(category) navigate(`/category/${category._id}`)
+            }}
+            sx={{flex:1,maxWidth:560,minWidth:{xs:80,sm:170},mx:{xs:.25,sm:2}}}
+            renderInput={(params)=>(
+              <TextField
+                {...params}
+                placeholder={"Search categories"}
+                size="small"
+                inputProps={{...params.inputProps,'aria-label':'Search product categories'}}
+                InputProps={{
+                  ...params.InputProps,
+                  startAdornment:(
+                    <>
+                      <InputAdornment position="start">
+                        <SearchRoundedIcon fontSize="small" sx={{color:'#766666'}} />
+                      </InputAdornment>
+                      {params.InputProps.startAdornment}
+                    </>
+                  )
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root':{
+                    height:38,
+                    borderRadius:2,
+                    bgcolor:'#fff',
+                    color:'#29232b',
+                    py:0,
+                    '& fieldset':{borderColor:'rgba(255,255,255,.55)'},
+                    '&:hover fieldset':{borderColor:'#f2b8b8'}
+                  },
+                  '& input::placeholder':{color:'#766666',opacity:1,fontSize:{xs:11,sm:13}}
+                }}
+              />
+            )}
+          />
+        )}
+
+        <Stack direction="row" alignItems="center" spacing={{xs:.25,sm:1}} sx={{display:isMobileStorefront?'none':'flex'}}>
+          <Button
+            component={Link}
+            to="/logout"
+            sx={{color:'inherit',fontWeight:600,'&:hover':{bgcolor:'rgba(255,255,255,.12)'}}}
+          >
+            {'تسجيل خروج'}
+          </Button>
+
+          {isCustomer && !is480 && (
+            <Button
+              component={Link}
+              to="/orders"
+              startIcon={<ReceiptLongOutlinedIcon />}
+              sx={{color:'inherit',fontWeight:600,'&:hover':{bgcolor:'rgba(255,255,255,.12)'}}}
+            >
+              {'طلباتي'}
+            </Button>
+          )}
+
+          {isCustomer && (
+            <Tooltip title={"Wishlist"}>
+              <IconButton
+                component={Link}
+                to="/wishlist"
+                aria-label={"Open wishlist"}
+                sx={{color:'inherit'}}
+              >
+                <Badge badgeContent={wishlistItems?.length} color="error">
+                  <FavoriteBorderIcon />
+                </Badge>
               </IconButton>
             </Tooltip>
-            <Menu
-              sx={{ mt: '45px' }}
-              id="menu-appbar"
-              anchorEl={anchorElUser}
-              anchorOrigin={{
-                vertical: 'top',
-                horizontal: 'right',
-              }}
-              keepMounted
-              transformOrigin={{
-                vertical: 'top',
-                horizontal: 'right',
-              }}
-              open={Boolean(anchorElUser)}
-              onClose={handleCloseUserMenu}
+          )}
+
+          {isCustomer && (
+            <Tooltip title={"Cart"}>
+              <IconButton
+                onClick={()=>navigate("/cart")}
+                aria-label={"Open cart"}
+                sx={{color:'inherit'}}
+              >
+                <Badge badgeContent={cartItems?.length || 0} color="error">
+                  <ShoppingCartOutlinedIcon />
+                </Badge>
+              </IconButton>
+            </Tooltip>
+          )}
+
+          <Tooltip title={isSalesperson?"فتح قائمة الحساب":"Open account menu"}>
+            <IconButton
+              onClick={handleOpenUserMenu}
+              aria-label={isSalesperson?"فتح قائمة الحساب":"Open account menu"}
+              sx={{color:'inherit',ml:{xs:0,sm:1},borderRadius:2,gap:.75,px:{xs:.5,sm:1}}}
             >
+              <Typography
+                noWrap
+                sx={{
+                  maxWidth:{xs:72,sm:140,md:190},
+                  fontSize:{xs:'.68rem',sm:'.85rem'},
+                  fontWeight:600,
+                  color:'inherit'
+                }}
+              >
+                {userInfo?.name || loggedInUser?.name || loggedInUser?.email || ''}
+              </Typography>
+              <Avatar
+                alt={userInfo?.name || loggedInUser?.name || 'Account'}
+                sx={{
+                  width:32,
+                  height:32,
+                  bgcolor:'rgba(255,255,255,.18)',
+                  color:'inherit'
+                }}
+              >
+                {(userInfo?.name || loggedInUser?.name)?.charAt(0) || <PersonOutlineRoundedIcon fontSize="small" />}
+              </Avatar>
+            </IconButton>
+          </Tooltip>
 
-              {
-                loggedInUser?.isAdmin && 
-              
-                <MenuItem  onClick={handleCloseUserMenu}>
-                  <Typography component={Link} color={'text.primary'} sx={{textDecoration:"none"}} to="/admin/add-product" textAlign="center">Add new Product</Typography>
-                </MenuItem>
-              
-              }
-              {settings.map((setting) => (
-                <MenuItem key={setting} onClick={handleCloseUserMenu}>
-                  <Typography component={Link} color={'text.primary'} sx={{textDecoration:"none"}} to={setting.to} textAlign="center">{setting.name}</Typography>
-                </MenuItem>
-              ))}
-            </Menu>
-            <Typography variant='h6' fontWeight={300}>{is480?`${userInfo?.name.toString().split(" ")[0]}`:`Hey👋, ${userInfo?.name}`}</Typography>
-            {loggedInUser.isAdmin && <Button variant='contained'>Admin</Button>}
-            <Stack sx={{flexDirection:"row",columnGap:"1rem",alignItems:"center",justifyContent:"center"}}>
+          <Menu
+            sx={{mt:isMobileStorefront?0:'45px'}}
+            id="menu-appbar"
+            anchorEl={anchorElUser}
+            anchorOrigin={{vertical:'top',horizontal:'right'}}
+            keepMounted
+            transformOrigin={{vertical:isMobileStorefront?'bottom':'top',horizontal:'right'}}
+            open={Boolean(anchorElUser)}
+            onClose={handleCloseUserMenu}
+          >
+            {loggedInUser?.isAdmin && (
+              <MenuItem onClick={handleCloseUserMenu}>
+                <Typography component={Link} color="text.primary" sx={{textDecoration:"none"}} to="/admin/add-product">
+                  {'Add new Product'}
+                </Typography>
+              </MenuItem>
+            )}
+            {settings.map((setting) => (
+              <MenuItem key={setting.to} onClick={handleCloseUserMenu}>
+                <Typography component={Link} color="text.primary" sx={{textDecoration:"none"}} to={setting.to}>
+                  {setting.name}
+                </Typography>
+              </MenuItem>
+            ))}
+            {isMobileStorefront && (
+              <MenuItem component={Link} to="/logout" onClick={handleCloseUserMenu}>
+                Log out
+              </MenuItem>
+            )}
+          </Menu>
 
-            
-            {
-            cartItems?.length>0 && 
-            <Badge  badgeContent={cartItems.length} color='error'>
-              <IconButton onClick={()=>navigate("/cart")}>
-                <ShoppingCartOutlinedIcon />
-                </IconButton>
-            </Badge>
-            }
-            
-            {
-              !loggedInUser?.isAdmin &&
-                  <Stack>
-                      <Badge badgeContent={wishlistItems?.length} color='error'>
-                          <IconButton component={Link} to={"/wishlist"}><FavoriteBorderIcon /></IconButton>
-                      </Badge>
-                  </Stack>
-            }
-            {
-              isProductList && <IconButton onClick={handleToggleFilters}><TuneIcon sx={{color:isProductFilterOpen?"black":""}}/></IconButton>
-            }
-            
-            </Stack>
-          </Stack>
-        </Toolbar>
+          {isCustomer && is480 && (
+            <Tooltip title={"My orders"}>
+              <IconButton component={Link} to="/orders" aria-label={"Open orders"} sx={{color:'inherit'}}>
+                <ReceiptLongOutlinedIcon />
+              </IconButton>
+            </Tooltip>
+          )}
+
+          
+
+          {loggedInUser?.isAdmin && <Button variant="contained" color="inherit" sx={{color:brandRed}}>{'Admin'}</Button>}
+          {isProductList && (
+            <IconButton onClick={handleToggleFilters} aria-label={"Toggle filters"} sx={{color:'inherit'}}>
+              <TuneIcon sx={{color:isProductFilterOpen?"#fff":"inherit"}} />
+            </IconButton>
+          )}
+        </Stack>
+      </Toolbar>
+
+      {isCustomer && categories.length > 0 && !isMobileStorefront && (
+        <Box
+          component="nav"
+          aria-label={"Product categories"}
+          sx={{
+            bgcolor:'#fff',
+            borderBottom:'1px solid #f1d0d0',
+            color:'#3b3030'
+          }}
+        >
+          <Box sx={{
+            display:'flex',
+            alignItems:'center',
+            gap:{xs:1.5,sm:2.5},
+            px:{xs:2,sm:3},
+            minHeight:42,
+            overflowX:'auto',
+            whiteSpace:'nowrap',
+            scrollbarWidth:'none',
+            '&::-webkit-scrollbar':{display:'none'}
+          }}>
+            {categories.map((category)=>(
+              <Typography
+                key={category._id}
+                component={Link}
+                to={`/category/${category._id}`}
+                sx={{
+                  flexShrink:0,
+                  color:'#3b3030',
+                  textDecoration:'none',
+                  fontSize:{xs:12,sm:13},
+                  fontWeight:600,
+                  py:1.25,
+                  borderBottom:'2px solid transparent',
+                  '&:hover':{color:brandRed,borderBottomColor:brandRed}
+                }}
+              >
+                {category.name}
+              </Typography>
+            ))}
+          </Box>
+        </Box>
+      )}
     </AppBar>
-  );
+    {isMobileStorefront && (
+      <>
+        <BottomNavigation
+          component="nav"
+          aria-label="Storefront navigation"
+          showLabels
+          value={
+            ['/','/orders','/wishlist','/cart'].includes(location.pathname)
+              ? location.pathname
+              : location.pathname.startsWith('/profile')
+                ? 'account'
+                : false
+          }
+          sx={{
+            position:'fixed',
+            left:0,
+            right:0,
+            bottom:0,
+            zIndex:theme.zIndex.appBar,
+            height:'calc(64px + env(safe-area-inset-bottom))',
+            boxSizing:'border-box',
+            pb:'env(safe-area-inset-bottom)',
+            bgcolor:'#fff',
+            borderTop:'1px solid #eadede',
+            '& .MuiBottomNavigationAction-root':{
+              minWidth:0,
+              px:.25,
+              color:'#6b5b5b',
+              '&.Mui-selected':{color:brandRed}
+            },
+            '& .MuiBottomNavigationAction-label':{fontSize:'.62rem'}
+          }}
+        >
+          <BottomNavigationAction component={Link} to="/" value="/" label="Home" icon={<HomeOutlinedIcon />} />
+          <BottomNavigationAction component={Link} to="/orders" value="/orders" label="Orders" icon={<ReceiptLongOutlinedIcon />} />
+          <BottomNavigationAction component={Link} to="/wishlist" value="/wishlist" label="Wishlist" icon={<Badge badgeContent={wishlistItems?.length} color="error"><FavoriteBorderIcon /></Badge>} />
+          <BottomNavigationAction component={Link} to="/cart" value="/cart" label="Cart" icon={<Badge badgeContent={cartItems?.length || 0} color="error"><ShoppingCartOutlinedIcon /></Badge>} />
+          <BottomNavigationAction
+            value="account"
+            label="Profile"
+            icon={<PersonOutlineRoundedIcon />}
+            onClick={handleOpenUserMenu}
+          />
+          {isProductList && (
+            <BottomNavigationAction
+              value="filters"
+              label="Filter"
+              icon={<TuneIcon />}
+              onClick={handleToggleFilters}
+              aria-label="Toggle filters"
+            />
+          )}
+        </BottomNavigation>
+        <Box aria-hidden="true" sx={{height:'calc(64px + env(safe-area-inset-bottom))'}} />
+      </>
+    )}
+    </>
+  )
 }

@@ -1,0 +1,331 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Build frontend",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"--prefix",
+				"frontend",
+				"run",
+				"build"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Prepare estimated restaurant catalog",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"backend\\scripts\\prepareRestaurantCatalog.cjs",
+				"C:\\Users\\Original\\.copilot\\session-state\\746d6a2e-aa2e-41dd-a1dc-d4c80bdb5ed3\\files\\restaurant-catalog\\catalog-extraction.json",
+				"C:\\Users\\Original\\.copilot\\session-state\\746d6a2e-aa2e-41dd-a1dc-d4c80bdb5ed3\\files\\restaurant-catalog\\media",
+				"backend\\data\\restaurant-catalog-estimates.json",
+				"backend\\uploads\\products\\catalog"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Prepare frontend catalog images",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"backend\\scripts\\prepareRestaurantCatalog.cjs",
+				"C:\\Users\\Original\\.copilot\\session-state\\746d6a2e-aa2e-41dd-a1dc-d4c80bdb5ed3\\files\\restaurant-catalog\\catalog-extraction.json",
+				"C:\\Users\\Original\\.copilot\\session-state\\746d6a2e-aa2e-41dd-a1dc-d4c80bdb5ed3\\files\\restaurant-catalog\\media",
+				"backend\\data\\restaurant-catalog-estimates.json",
+				"frontend\\public\\catalog\\products"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Build frontend catalog UI",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"build",
+				"--prefix",
+				"frontend"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Validate catalog files",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"-e",
+				"const fs=require('fs');const path=require('path');const products=JSON.parse(fs.readFileSync('backend/data/restaurant-catalog-estimates.json','utf8'));const images=[...new Set(products.flatMap(p=>p.images))];const missing=images.filter(url=>!fs.existsSync(path.join('frontend/public',url.slice(1))));if(products.length!==235||products.some(p=>!p.priceIsEstimate||p.stockQuantity!==0||!Number.isFinite(p.price)||p.price<=0)||missing.length)throw new Error(JSON.stringify({products:products.length,missingImages:missing.length}));const bytes=images.reduce((sum,url)=>sum+fs.statSync(path.join('frontend/public',url.slice(1))).size,0);console.log(JSON.stringify({products:products.length,categories:new Set(products.map(p=>p.category)).size,uniqueImages:images.length,missingImages:missing.length,zeroStock:products.filter(p=>p.stockQuantity===0).length,priceRange:[Math.min(...products.map(p=>p.price)),Math.max(...products.map(p=>p.price))],imageBytes:bytes},null,2))"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Check catalog asset integrity",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"-e",
+				"const fs=require(\"fs\");const path=require(\"path\");const p=JSON.parse(fs.readFileSync(\"backend/data/restaurant-catalog-estimates.json\",\"utf8\"));const imgs=[...new Set(p.flatMap(x=>x.images))];const missing=imgs.filter(u=>!fs.existsSync(path.join(\"frontend/public\",u.slice(1))));if(p.length!==235||p.some(x=>!x.priceIsEstimate||x.stockQuantity!==0||!Number.isFinite(x.price)||x.price<=0)||missing.length)throw Error(JSON.stringify({products:p.length,missing}));const bytes=imgs.reduce((n,u)=>n+fs.statSync(path.join(\"frontend/public\",u.slice(1))).size,0);console.log(JSON.stringify({products:p.length,categories:new Set(p.map(x=>x.category)).size,uniqueImages:imgs.length,missingImages:missing.length,zeroStock:p.filter(x=>x.stockQuantity===0).length,imageBytes:bytes},null,2))"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Review catalog changes",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"status",
+				"--short",
+				"--untracked-files=all"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Replace database product catalog",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"backend\\scripts\\importRestaurantCatalog.cjs",
+				"--confirm-replace-catalog"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Approve catalog prices",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"backend\\scripts\\approveRestaurantCatalogPrices.cjs"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Enable unlimited catalog stock",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"backend\\scripts\\setCatalogUnlimitedStock.cjs"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Build unlimited stock changes",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"build",
+				"--prefix",
+				"frontend"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Build category marquee UI",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"build",
+				"--prefix",
+				"frontend"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Inspect pending changes",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"-e",
+				"const cp=require('child_process'); for (const args of [['status','--short'],['diff','--stat'],['diff','--name-status'],['diff','--','frontend/src/i18n/LanguageContext.jsx','frontend/src/index.js']]) { try { console.log('\\n> git '+args.join(' ')); console.log(cp.execFileSync('git',args,{encoding:'utf8'})); } catch(e) { console.log(e.stdout?.toString()||e.message); } }"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Review diff summary",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"--no-pager",
+				"diff",
+				"--stat"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "List changed files",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"--no-pager",
+				"diff",
+				"--name-only"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Inspect localization diffs",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"--no-pager",
+				"diff",
+				"--unified=0",
+				"--",
+				"frontend/src/index.js",
+				"frontend/src/theme/theme.js",
+				"frontend/src/features/navigation/components/Navbar.jsx",
+				"frontend/src/features/products/components/CategoryHome.jsx",
+				"frontend/src/features/products/components/HomeBanner.jsx",
+				"frontend/src/features/admin/components/SalesRequestsTable.jsx",
+				"frontend/src/features/admin/components/AdminOrders.jsx"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Read original entrypoint",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"show",
+				"HEAD:frontend/src/index.js"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Revert language wrappers",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"frontend\\revert-language.cjs"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Verify frontend after revert",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"--prefix",
+				"frontend",
+				"run",
+				"build"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Prepare reference image",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"C:\\Users\\Original\\.copilot\\session-state\\38dce78f-ebf0-471e-8038-e87071da13f2\\files\\copy-reference-image.cjs"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Build statistics dashboard",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"--prefix",
+				"frontend",
+				"run",
+				"build"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Clean temporary image",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"C:\\Users\\Original\\.copilot\\session-state\\38dce78f-ebf0-471e-8038-e87071da13f2\\files\\cleanup-reference-image.cjs"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Install Chart.js packages",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"--prefix",
+				"frontend",
+				"install",
+				"chart.js",
+				"react-chartjs-2"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Build Chart.js dashboard",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"--prefix",
+				"frontend",
+				"run",
+				"build"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Build sales analytics charts",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"--prefix",
+				"frontend",
+				"run",
+				"build"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Check sales API syntax",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"--check",
+				"backend\\controllers\\SalesRequest.js"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Build statistics error handling",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"--prefix",
+				"frontend",
+				"run",
+				"build"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Check backend syntax",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"--check",
+				"backend\\controllers\\SalesRequest.js"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Build top-products update",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"--prefix",
+				"frontend",
+				"run",
+				"build"
+			],
+			"isBackground": false
+		}
+	]
+}

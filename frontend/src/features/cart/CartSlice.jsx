@@ -15,7 +15,13 @@ export const addToCartAsync=createAsyncThunk('cart/addToCartAsync',async(item)=>
     return addedItem
 })
 export const fetchCartByUserIdAsync=createAsyncThunk('cart/fetchCartByUserIdAsync',async(id)=>{
-    const items=await fetchCartByUserId(id)
+    const response=await fetchCartByUserId(id)
+    const items=Array.isArray(response)
+        ? response
+        : [response?.data, response?.items, response?.data?.items].find(Array.isArray)
+    if(!Array.isArray(items)){
+        throw new Error('Invalid cart response: expected an array of items')
+    }
     return items
 })
 export const updateCartItemByIdAsync=createAsyncThunk('cart/updateCartItemByIdAsync',async(update)=>{
@@ -109,7 +115,7 @@ const cartSlice=createSlice({
 
 // exporting selectors
 export const selectCartStatus=(state)=>state.CartSlice.status
-export const selectCartItems=(state)=>state.CartSlice.items
+export const selectCartItems=(state)=>Array.isArray(state.CartSlice.items) ? state.CartSlice.items : []
 export const selectCartErrors=(state)=>state.CartSlice.errors
 export const selectCartSuccessMessage=(state)=>state.CartSlice.successMessage
 export const selectCartItemAddStatus=(state)=>state.CartSlice.cartItemAddStatus

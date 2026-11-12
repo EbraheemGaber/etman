@@ -6,6 +6,7 @@ import { LoadingButton } from '@mui/lab'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from "react-hook-form"
 import {toast} from 'react-toastify'
+import { FormCard } from '../../../components/FormCard'
 
 
 export const OtpVerfication = () => {
@@ -86,30 +87,30 @@ export const OtpVerfication = () => {
         
         <Stack component={Paper} elevation={1} position={'relative'} justifyContent={'center'} alignItems={'center'} p={'2rem'} rowGap={'2rem'}>
             
-            <Typography mt={4} variant='h5' fontWeight={500}>Verify Your Email Address</Typography>
+            <Typography mt={4} variant='h5' fontWeight={500}>{'Verify Your Email Address'}</Typography>
 
             {
                 resendOtpStatus==='fullfilled'?(
-                    <Stack width={'100%'} rowGap={'1rem'} component={'form'} noValidate onSubmit={handleSubmit(handleVerifyOtp)}>
+                    <FormCard width={'100%'} noValidate onSubmit={handleSubmit(handleVerifyOtp)}>
                         <Stack rowGap={'1rem'}> 
                             <Stack>
-                                <Typography  color={'GrayText'}>Enter the 4 digit OTP sent on</Typography>
+                                <Typography  color={'GrayText'}>{'Enter the 4 digit OTP sent on'}</Typography>
                                 <Typography fontWeight={'600'} color={'GrayText'}>{loggedInUser?.email}</Typography>
                             </Stack>
                             <Stack>
                                 <TextField {...register("otp",{required:"OTP is required",minLength:{value:4,message:"Please enter a 4 digit OTP"}})} fullWidth type='number' />
-                                {errors?.otp && <FormHelperText sx={{color:"red"}}>{errors.otp.message}</FormHelperText>}
+                                {errors?.otp && <FormHelperText sx={{color:"error.main"}}>{errors.otp.message}</FormHelperText>}
                             </Stack>
                        </Stack>
-                        <LoadingButton loading={otpVerificationStatus==='pending'}  type='submit' fullWidth variant='contained'>Verify</LoadingButton>
-                    </Stack>
+                        <LoadingButton loading={otpVerificationStatus==='pending'}  type='submit' fullWidth variant='contained'>{'Verify'}</LoadingButton>
+                    </FormCard>
                 ):
                 <>
                 <Stack>
-                    <Typography color={'GrayText'}>We will send you a OTP on</Typography>
+                    <Typography color={'GrayText'}>{'We will send you a OTP on'}</Typography>
                     <Typography fontWeight={'600'} color={'GrayText'}>{loggedInUser?.email}</Typography>
                 </Stack>
-                <LoadingButton onClick={handleSendOtp} loading={resendOtpStatus==='pending'} fullWidth variant='contained'>Get OTP</LoadingButton>
+                <LoadingButton onClick={handleSendOtp} loading={resendOtpStatus==='pending'} fullWidth variant='contained'>{'Get OTP'}</LoadingButton>
                 </>
              }
 

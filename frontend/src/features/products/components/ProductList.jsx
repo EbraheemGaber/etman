@@ -17,10 +17,9 @@ import { ITEMS_PER_PAGE } from '../../../constants'
 import {createWishlistItemAsync, deleteWishlistItemByIdAsync, resetWishlistItemAddStatus, resetWishlistItemDeleteStatus, selectWishlistItemAddStatus, selectWishlistItemDeleteStatus, selectWishlistItems} from '../../wishlist/WishlistSlice'
 import {selectLoggedInUser} from '../../auth/AuthSlice'
 import {toast} from 'react-toastify'
-import {banner1, banner2, banner3, banner4, loadingAnimation} from '../../../assets'
+import {loadingAnimation} from '../../../assets'
 import { resetCartItemAddStatus, selectCartItemAddStatus } from '../../cart/CartSlice'
 import { motion } from 'framer-motion'
-import { ProductBanner } from './ProductBanner'
 import ClearIcon from '@mui/icons-material/Clear';
 import Lottie from 'lottie-react'
 
@@ -31,16 +30,12 @@ const sortOptions=[
 ]
 
 
-const bannerImages=[banner1,banner3,banner2,banner4]
-
-export const ProductList = () => {
-    const [filters,setFilters]=useState({})
+export const ProductList = ({categoryId}) => {
+    const [filters,setFilters]=useState(()=>categoryId?{category:[categoryId]}:{})
     const [page,setPage]=useState(1)
     const [sort,setSort]=useState(null)
     const theme=useTheme()
 
-    const is1200=useMediaQuery(theme.breakpoints.down(1200))
-    const is800=useMediaQuery(theme.breakpoints.down(800))
     const is700=useMediaQuery(theme.breakpoints.down(700))
     const is600=useMediaQuery(theme.breakpoints.down(600))
     const is500=useMediaQuery(theme.breakpoints.down(500))
@@ -63,6 +58,13 @@ export const ProductList = () => {
     const isProductFilterOpen=useSelector(selectProductIsFilterOpen)
 
     const dispatch=useDispatch()
+
+    useEffect(()=>{
+        if(categoryId){
+            setFilters({category:[categoryId]})
+            setPage(1)
+        }
+    },[categoryId])
 
     const handleBrandFilters=(e)=>{
 
@@ -190,7 +192,7 @@ export const ProductList = () => {
             <Stack mb={'5rem'}  sx={{scrollBehavior:"smooth",overflowY:"scroll"}}>
 
                     
-                        <Typography variant='h4'>New Arrivals</Typography>
+                        <Typography variant='h4'>{'New Arrivals'}</Typography>
 
 
                             <IconButton onClick={handleFilterClose} style={{position:"absolute",top:15,right:15}}>
@@ -201,18 +203,18 @@ export const ProductList = () => {
 
 
                     <Stack rowGap={2} mt={4} >
-                        <Typography sx={{cursor:"pointer"}} variant='body2'>Totes</Typography>
-                        <Typography sx={{cursor:"pointer"}} variant='body2'>Backpacks</Typography>
-                        <Typography sx={{cursor:"pointer"}} variant='body2'>Travel Bags</Typography>
-                        <Typography sx={{cursor:"pointer"}} variant='body2'>Hip Bags</Typography>
-                        <Typography sx={{cursor:"pointer"}} variant='body2'>Laptop Sleeves</Typography>
+                        <Typography sx={{cursor:"pointer"}} variant='body2'>{'Totes'}</Typography>
+                        <Typography sx={{cursor:"pointer"}} variant='body2'>{'Backpacks'}</Typography>
+                        <Typography sx={{cursor:"pointer"}} variant='body2'>{'Travel Bags'}</Typography>
+                        <Typography sx={{cursor:"pointer"}} variant='body2'>{'Hip Bags'}</Typography>
+                        <Typography sx={{cursor:"pointer"}} variant='body2'>{'Laptop Sleeves'}</Typography>
                     </Stack>
 
                     {/* brand filters */}
                     <Stack mt={2}>
                         <Accordion>
                             <AccordionSummary expandIcon={<AddIcon />}  aria-controls="brand-filters" id="brand-filters" >
-                                    <Typography>Brands</Typography>
+                                    <Typography>{'Brands'}</Typography>
                             </AccordionSummary>
 
                             <AccordionDetails sx={{p:0}}>
@@ -233,7 +235,7 @@ export const ProductList = () => {
                     <Stack mt={2}>
                         <Accordion>
                             <AccordionSummary expandIcon={<AddIcon />}  aria-controls="brand-filters" id="brand-filters" >
-                                    <Typography>Category</Typography>
+                                    <Typography>{'Category'}</Typography>
                             </AccordionSummary>
 
                             <AccordionDetails sx={{p:0}}>
@@ -254,17 +256,6 @@ export const ProductList = () => {
         </motion.div>
         
         <Stack mb={'3rem'}>
-            
-
-                {/* banners section */}
-                {
-                    !is600 && 
-                
-                <Stack sx={{width:"100%",height:is800?"300px":is1200?"400px":"500px"}}>
-                    <ProductBanner images={bannerImages}/>
-                </Stack>
-                }
-
                 {/* products */}
                 <Stack rowGap={5} mt={is600?2:0}>
 
@@ -273,18 +264,18 @@ export const ProductList = () => {
                                         
                         <Stack alignSelf={'flex-end'} width={'12rem'}>
                             <FormControl fullWidth>
-                                    <InputLabel id="sort-dropdown">Sort</InputLabel>
+                                    <InputLabel id="sort-dropdown">{'Sort'}</InputLabel>
                                     <Select
                                         variant='standard'
                                         labelId="sort-dropdown"
-                                        label="Sort"
+                                        label={'Sort'}
                                         onChange={(e)=>setSort(e.target.value)}
                                         value={sort}
                                     >
-                                        <MenuItem bgcolor='text.secondary' value={null}>Reset</MenuItem>
+                                        <MenuItem bgcolor='text.secondary' value={null}>{'Reset'}</MenuItem>
                                         {
                                             sortOptions.map((option)=>(
-                                                <MenuItem key={option} value={option}>{option.name}</MenuItem>
+                                                <MenuItem key={option.name} value={option}>{option.name}</MenuItem>
                                             ))
                                         }
                                     </Select>
@@ -294,10 +285,20 @@ export const ProductList = () => {
                     </Stack>
 
                     {/* product grid */}
-                    <Grid gap={is700?1:2} container justifyContent={'center'} alignContent={'center'}>
+                    <Grid
+                        container
+                        justifyContent={'center'}
+                        alignContent={'center'}
+                        sx={{
+                            gap:{xs:1,sm:2},
+                            display:{xs:'grid',sm:'flex'},
+                            gridTemplateColumns:{xs:'repeat(2, minmax(0, 1fr))'},
+                            px:{xs:1,sm:0}
+                        }}
+                    >
                         {
                             products.map((product)=>(
-                                <ProductCard key={product._id} id={product._id} title={product.title} thumbnail={product.thumbnail} brand={product.brand.name} price={product.price} handleAddRemoveFromWishlist={handleAddRemoveFromWishlist}/>
+                                <ProductCard key={product._id} id={product._id} title={product.title} thumbnail={product.thumbnail} brand={product.brand.name} price={product.price} priceIsEstimate={product.priceIsEstimate} discountPercentage={product.discountPercentage} stockQuantity={product.stockQuantity} isUnlimitedStock={product.isUnlimitedStock} handleAddRemoveFromWishlist={handleAddRemoveFromWishlist} isGridCard />
                             ))
                         }
                     </Grid>
@@ -305,7 +306,9 @@ export const ProductList = () => {
                     {/* pagination */}
                     <Stack alignSelf={is488?'center':'flex-end'} mr={is488?0:5} rowGap={2} p={is488?1:0}>
                         <Pagination size={is488?'medium':'large'} page={page}  onChange={(e,page)=>setPage(page)} count={Math.ceil(totalResults/ITEMS_PER_PAGE)} variant="outlined" shape="rounded" />
-                        <Typography textAlign={'center'}>Showing {(page-1)*ITEMS_PER_PAGE+1} to {page*ITEMS_PER_PAGE>totalResults?totalResults:page*ITEMS_PER_PAGE} of {totalResults} results</Typography>
+                        <Typography textAlign={'center'}>
+                          {`Showing ${(page-1)*ITEMS_PER_PAGE+1} to ${page*ITEMS_PER_PAGE>totalResults?totalResults:page*ITEMS_PER_PAGE} of ${totalResults} results`}
+                        </Typography>
                     </Stack>    
                 
                 </Stack>

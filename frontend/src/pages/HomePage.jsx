@@ -1,9 +1,10 @@
 import React, { useEffect } from 'react'
 import { Navbar } from '../features/navigation/components/Navbar'
-import { ProductList } from '../features/products/components/ProductList'
 import { resetAddressStatus, selectAddressStatus } from '../features/address/AddressSlice'
 import { useDispatch, useSelector } from 'react-redux'
 import {Footer} from '../features/footer/Footer'
+import { CategoryHome } from '../features/products/components/CategoryHome'
+import { HomeBanner } from '../features/products/components/HomeBanner'
 
 export const HomePage = () => {
 
@@ -19,8 +20,9 @@ export const HomePage = () => {
 
   return (
     <>
-    <Navbar isProductList={true}/>
-    <ProductList/>
+    <Navbar/>
+    <HomeBanner/>
+    <CategoryHome/>
     <Footer/>
     </>
   )

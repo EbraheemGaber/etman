@@ -1,10 +1,9 @@
-import { axiosi } from "../../config/axios";
+import { fetchCachedGet } from "../../config/apiQuery";
 
 export const fetchAllBrands=async()=>{
     try {
-        const res=await axiosi.get("/brands")
-        return res.data
+        return await fetchCachedGet("/brands")
     } catch (error) {
-        throw error.response.data
+        throw error?.response?.data || error
     }
 }

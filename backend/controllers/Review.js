@@ -27,8 +27,15 @@ exports.getByProductId=async(req,res)=>{
         }
 
         const totalDocs=await Review.find({product:id}).countDocuments().exec()
-        const result=await Review.find({product:id}).skip(skip).limit(limit).populate('user').exec()
+        let result = []
+        try {
+            result=await Review.find({product:id}).skip(skip).limit(limit).populate('user').exec()
+        } catch (populateError) {
+            console.warn("Populating user for reviews failed:", populateError?.message)
+            result=await Review.find({product:id}).skip(skip).limit(limit).exec()
+        }
 
+        res.set("X-Total-Count",totalDocs)
         res.set("X-total-Count",totalDocs)
         res.status(200).json(result)
 

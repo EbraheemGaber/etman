@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import { motion, useReducedMotion } from 'framer-motion'
 import { useDispatch, useSelector } from 'react-redux'
 import { fetchProducts } from '../ProductApi'
-import { selectCategories, selectCategoryStatus } from '../../categories/CategoriesSlice'
+import { fetchAllCategoriesAsync, selectCategories, selectCategoryErrors, selectCategoryStatus } from '../../categories/CategoriesSlice'
 import { ProductCard } from './ProductCard'
 import { selectWishlistItems, createWishlistItemAsync, deleteWishlistItemByIdAsync } from '../../wishlist/WishlistSlice'
 import { selectLoggedInUser } from '../../auth/AuthSlice'
@@ -12,6 +12,7 @@ import { selectLoggedInUser } from '../../auth/AuthSlice'
 export const CategoryHome=()=>{
   const categories=useSelector(selectCategories)
   const categoryStatus=useSelector(selectCategoryStatus)
+  const categoryErrors=useSelector(selectCategoryErrors)
   const wishlistItems=useSelector(selectWishlistItems)
   const loggedInUser=useSelector(selectLoggedInUser)
   const dispatch=useDispatch()
@@ -21,6 +22,12 @@ export const CategoryHome=()=>{
   const [productsByCategory,setProductsByCategory]=useState({})
   const [error,setError]=useState('')
   const [loading,setLoading]=useState(false)
+
+  useEffect(()=>{
+    if(categoryStatus==='idle'){
+      dispatch(fetchAllCategoriesAsync())
+    }
+  },[categoryStatus,dispatch])
 
   useEffect(()=>{
     if(!categories.length || categoryStatus!=='fulfilled') return undefined
@@ -62,6 +69,15 @@ export const CategoryHome=()=>{
 
   return (
     <Stack spacing={4} py={4} mb={2}>
+      {categoryStatus==='rejected' && (
+        <Alert
+          severity="error"
+          sx={{mx:2}}
+          action={<Button color="inherit" size="small" onClick={()=>dispatch(fetchAllCategoriesAsync())}>{'Retry'}</Button>}
+        >
+          {categoryErrors?.message || 'Unable to load categories.'}
+        </Alert>
+      )}
       {error && <Alert severity="error" sx={{mx:2}}>{error}</Alert>}
       {!!categories.length && (
         <Box component="nav" aria-label={"Shop by category"}>

@@ -1,135 +1,129 @@
-import { Box, FormHelperText, Stack, TextField, Typography, useMediaQuery, useTheme } from '@mui/material'
+import { Box, FormHelperText, Stack, TextField, Typography } from '@mui/material'
 import React, { useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { useForm } from "react-hook-form"
-import {useDispatch,useSelector} from 'react-redux'
-import { LoadingButton } from '@mui/lab';
-import {selectLoggedInUser,loginAsync,selectLoginStatus,selectLoginError,selectLogoutStatus,clearLoginError,resetLoginStatus} from '../AuthSlice'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useForm } from 'react-hook-form'
+import { useDispatch, useSelector } from 'react-redux'
+import { LoadingButton } from '@mui/lab'
+import {
+  selectLoggedInUser,
+  loginAsync,
+  selectLoginStatus,
+  selectLoginError,
+  selectLogoutStatus,
+  clearLoginError,
+  resetLoginStatus
+} from '../AuthSlice'
 import { toast } from 'react-toastify'
-import {MotionConfig, motion} from 'framer-motion'
+import { motion } from 'framer-motion'
 import { FormCard } from '../../../components/FormCard'
 import { PasswordField } from '../../../components/PasswordField'
+import { AuthHomeLink } from './AuthHomeLink'
 
 export const Login = () => {
-  const dispatch=useDispatch()
-  const status=useSelector(selectLoginStatus)
-  const logoutStatus=useSelector(selectLogoutStatus)
-  const error=useSelector(selectLoginError)
-  const loggedInUser=useSelector(selectLoggedInUser)
-  const {register,handleSubmit,reset,formState: { errors }} = useForm()
-  const navigate=useNavigate()
-  const theme=useTheme()
-  const is480=useMediaQuery(theme.breakpoints.down(480))
-  
-  // handles user redirection
-  useEffect(()=>{
-    if(logoutStatus==='pending'){
-      return
-    }
+  const dispatch = useDispatch()
+  const status = useSelector(selectLoginStatus)
+  const logoutStatus = useSelector(selectLogoutStatus)
+  const error = useSelector(selectLoginError)
+  const loggedInUser = useSelector(selectLoggedInUser)
+  const { register, handleSubmit, reset, formState: { errors } } = useForm()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const returnTo = location.state?.from
+  const returnPath = returnTo?.pathname?.startsWith('/') && !returnTo.pathname.startsWith('//')
+    ? `${returnTo.pathname}${returnTo.search || ''}${returnTo.hash || ''}`
+    : '/'
 
-    if(loggedInUser && loggedInUser?.isVerified){
-      navigate("/")
-    }
-    else if(loggedInUser && !loggedInUser?.isVerified){
-      navigate("/verify-otp")
-    }
-  },[loggedInUser,logoutStatus,navigate])
+  useEffect(() => {
+    if (logoutStatus === 'pending') return
 
-  // handles login error and toast them
-  useEffect(()=>{
-    if(error){
-      toast.error(error.message)
+    if (loggedInUser && loggedInUser?.isVerified) {
+      navigate(returnPath, { replace: true })
+    } else if (loggedInUser && !loggedInUser?.isVerified) {
+      navigate('/verify-otp', { state: { from: returnTo }, replace: true })
     }
-  },[error])
+  }, [loggedInUser, logoutStatus, navigate, returnPath, returnTo])
 
-  // handles login status and dispatches reset actions to relevant states in cleanup
-  useEffect(()=>{
-    if(status==='fullfilled' && loggedInUser?.isVerified===true){
-      toast.success('Login successful')
+  useEffect(() => {
+    if (error) toast.error(error.message)
+  }, [error])
+
+  useEffect(() => {
+    if (status === 'fullfilled' && loggedInUser?.isVerified === true) {
+      toast.success('تم تسجيل الدخول بنجاح')
       reset()
     }
-    return ()=>{
+    return () => {
       dispatch(clearLoginError())
       dispatch(resetLoginStatus())
     }
-  },[status])
+  }, [status])
 
-  const handleLogin=(data)=>{
-    const cred={...data}
+  const handleLogin = (data) => {
+    const cred = { ...data }
     delete cred.confirmPassword
     dispatch(loginAsync(cred))
   }
 
   return (
-    <Stack width={'100vw'} height={'100vh'} flexDirection={'row'} sx={{overflowY:"hidden"}}>
-        
-        <Stack flex={1} justifyContent={'center'} alignItems={'center'} sx={{width:'100%'}}>
-
-              <motion.div
-                initial={{opacity:0,y:14}}
-                animate={{opacity:1,y:0}}
-                transition={{duration:.55,ease:'easeOut'}}
-              >
-                <Stack alignItems="center" spacing={0.5}>
-                  <Typography
-                    variant="h3"
-                    align="center"
-                    sx={{
-                      color:'text.primary',
-                      fontWeight:800,
-                      letterSpacing:{xs:'.06em',sm:'.1em'},
-                      lineHeight:1.15,
-                      fontSize:{xs:'1.85rem',sm:'2.5rem'}
-                    }}
-                  >
-                    {'ETMAN GROUP'}
-                    <Box component="span" sx={{color:'primary.main',ml:1}}>{'STORE'}</Box>
-                  </Typography>
-                  <motion.div
-                    initial={{scaleX:0}}
-                    animate={{scaleX:1}}
-                    transition={{duration:.45,delay:.25,ease:'easeOut'}}
-                    style={{height:3,width:76,backgroundColor:theme.palette.primary.main,borderRadius:999,transformOrigin:'center'}}
-                  />
-                  <Typography color="text.secondary" variant="body2" align="center">
-                    {'Your everyday shopping destination'}
-                  </Typography>
-                </Stack>
-              </motion.div>
-
-                <FormCard mt={4} width={is480?"95vw":'28rem'} noValidate onSubmit={handleSubmit(handleLogin)}>
-
-                    <motion.div whileHover={{y:-5}}>
-                      <TextField fullWidth {...register("email",{required:"Email is required",pattern:{value:/[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?/g,message:"Enter a valid email"}})} placeholder={'Email'}/>
-                      {errors.email && <FormHelperText sx={{mt:1}} error>{errors.email.message}</FormHelperText>}
-                    </motion.div>
-
-                    
-                    <motion.div whileHover={{y:-5}}>
-                      <PasswordField fullWidth {...register("password",{required:"Password is required"})} placeholder={'Password'}/>
-                      {errors.password && <FormHelperText sx={{mt:1}} error>{errors.password.message}</FormHelperText>}
-                    </motion.div>
-                    
-                    <motion.div whileHover={{scale:1.020}} whileTap={{scale:1}}>
-                      <LoadingButton fullWidth  sx={{height:'2.5rem'}} loading={status==='pending'} type='submit' variant='contained'>{'Login'}</LoadingButton>
-                    </motion.div>
-
-                    <Stack flexDirection={'row'} justifyContent={'space-between'} alignItems={'center'} flexWrap={'wrap-reverse'} >
-
-                      <MotionConfig whileHover={{x:2}} whileTap={{scale:1.050}}>
-                          <motion.div>
-                              <Typography mr={'1.5rem'} sx={{textDecoration:"none",color:"text.primary"}} to={'/forgot-password'} component={Link}>{'Forgot password'}</Typography>
-                          </motion.div>
-
-                          <motion.div>
-                            <Typography sx={{textDecoration:"none",color:"text.primary"}} to={'/signup'} component={Link}>{"Don't have an account? "}<span style={{color:theme.palette.primary.dark}}>{'Register'}</span></Typography>
-                          </motion.div>
-                      </MotionConfig>
-
-                    </Stack>
-                    </FormCard>
-
-                    </Stack>
+    <Stack
+      width="100%"
+      minHeight="100vh"
+      justifyContent="center"
+      alignItems="center"
+      dir="rtl"
+      lang="ar"
+      sx={{ px: 2, py: 4, backgroundColor: '#fff', fontFamily: 'Cairo, Tahoma, sans-serif', '& *:not(svg)': { fontFamily: 'Cairo, Tahoma, sans-serif' } }}
+    >
+      <Stack width="100%" maxWidth="22rem" alignItems="stretch">
+        <Stack alignItems="flex-start" spacing={0.5} sx={{ mb: 2 }}>
+          <Typography variant="h5" fontWeight={700} color="text.primary">{'أهلاً بك مجددًا في متجر عتمان جروب'}</Typography>
+          <Typography variant="body2" color="text.secondary">
+            {'ليس لديك حساب؟'}{' '}
+            <Box component={Link} to="/signup" state={{ from: returnTo }} sx={{ color: 'primary.main', fontWeight: 600, textDecoration: 'none' }}>
+              {'أنشئ حسابًا'}
+            </Box>
+          </Typography>
         </Stack>
+
+        <FormCard dir="rtl" lang="ar" width="100%" noValidate onSubmit={handleSubmit(handleLogin)} sx={{ borderRadius: 2, p: 2 }}>
+          <motion.div whileHover={{ y: -2 }}>
+            <TextField
+              fullWidth
+              {...register('email', {
+                required: 'البريد الإلكتروني مطلوب',
+                pattern: {
+                  value: /[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?/g,
+                  message: 'أدخل بريدًا إلكترونيًا صحيحًا'
+                }
+              })}
+              placeholder="البريد الإلكتروني"
+            />
+            {errors.email && <FormHelperText sx={{ mt: 1 }} error>{errors.email.message}</FormHelperText>}
+          </motion.div>
+
+          <motion.div whileHover={{ y: -2 }}>
+            <PasswordField
+              fullWidth
+              showPasswordLabel="إظهار كلمة المرور"
+              hidePasswordLabel="إخفاء كلمة المرور"
+              {...register('password', { required: 'كلمة المرور مطلوبة' })}
+              placeholder="كلمة المرور"
+            />
+            {errors.password && <FormHelperText sx={{ mt: 1 }} error>{errors.password.message}</FormHelperText>}
+          </motion.div>
+
+          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 1 }}>
+            <LoadingButton fullWidth sx={{ height: '2.5rem', borderRadius: 999, fontWeight: 700 }} loading={status === 'pending'} type="submit" variant="contained">
+              {'تسجيل الدخول'}
+            </LoadingButton>
+          </motion.div>
+
+          <Typography sx={{ textDecoration: 'none', color: 'text.primary', fontSize: '.9rem' }} to="/forgot-password" component={Link}>
+            {'نسيت كلمة المرور؟'}
+          </Typography>
+          <AuthHomeLink />
+        </FormCard>
+      </Stack>
+    </Stack>
   )
 }

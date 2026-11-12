@@ -35,7 +35,7 @@ const products = [
     images: [
       "https://cdn.dummyjson.com/product-images/13/1.jpg",
       "https://cdn.dummyjson.com/product-images/13/2.png",
-      "https://cdn.dummyjson.com/product-images/13/3.jpg",
+      "the logo style appeat",
       "https://cdn.dummyjson.com/product-images/13/4.jpg",
     ],
     isDeleted: false,

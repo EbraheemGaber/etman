@@ -28,6 +28,30 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'
 import {motion} from 'framer-motion'
 
+const formatOrderDate=(value)=>{
+    const date=new Date(value)
+    if(Number.isNaN(date.getTime())) return '—'
+    const year=date.toLocaleString('ar-EG-u-nu-latn',{year:'numeric'})
+    const month=date.toLocaleString('ar-EG-u-nu-latn',{month:'2-digit'})
+    const day=date.toLocaleString('ar-EG-u-nu-latn',{day:'2-digit'})
+    return `${year}/${month}/${day}`
+}
+
+const formatCurrency=(value)=>`ج.م ${Number(value || 0).toLocaleString('ar-EG-u-nu-latn')}`
+
+const orderStatusLabels={
+    Pending:'قيد الانتظار',
+    Dispatched:'تم الشحن',
+    'Out for delivery':'قيد التوصيل',
+    Delivered:'تم التوصيل',
+    Cancelled:'ملغي'
+}
+
+const paymentModeLabels={
+    COD:'الدفع نقدًا عند الاستلام',
+    CARD:'الدفع بالبطاقة'
+}
+
 
 export const UserOrders = () => {
 
@@ -59,17 +83,17 @@ export const UserOrders = () => {
     useEffect(()=>{
 
         if(cartItemAddStatus==='fulfilled'){
-            toast.success("Product added to cart")
+            toast.success("تمت إضافة المنتج إلى سلة التسوق")
         }
 
         else if(cartItemAddStatus==='rejected'){
-            toast.error('Error adding product to cart, please try again later')
+            toast.error('تعذرت إضافة المنتج إلى سلة التسوق. يرجى المحاولة لاحقًا.')
         }
     },[cartItemAddStatus])
 
     useEffect(()=>{
         if(orderFetchStatus==='rejected'){
-            toast.error("Error fetching orders, please try again later")
+            toast.error("تعذر تحميل الطلبات. يرجى المحاولة مرة أخرى.")
         }
     },[orderFetchStatus])
 
@@ -88,58 +112,67 @@ export const UserOrders = () => {
 
 
   return (
-    <Stack width="100%" minWidth={0} justifyContent={'center'} alignItems={'center'}>
+    <Stack
+        width="100%"
+        minWidth={0}
+        justifyContent={'center'}
+        alignItems={'center'}
+        dir="rtl"
+        lang="ar"
+        sx={{fontFamily:'Cairo, Tahoma, sans-serif','& *:not(svg)':{fontFamily:'Cairo, Tahoma, sans-serif'}}}
+    >
         {
             orderFetchStatus==='pending'?
             <Stack width={is480?'auto':'25rem'} height={'calc(100vh - 4rem)'} justifyContent={'center'} alignItems={'center'}>
                 <Lottie animationData={loadingAnimation}/>
             </Stack>
             :
-            <Stack width="100%" maxWidth="60rem" minWidth={0} boxSizing="border-box" p={is480?2:4} mb={'5rem'}>
+            <Stack width="100%" maxWidth="42rem" minWidth={0} boxSizing="border-box" px={is480?2:3} pt={is480?2:3} pb={8}>
                 
                 {/* heading and navigation */}
-                <Stack flexDirection={'row'} columnGap={2} >
+                <Stack flexDirection={'row'} columnGap={1.5} alignItems="center" textAlign="right">
                     {
                         !is480 && <motion.div whileHover={{x:-5}} style={{alignSelf:"center"}}>
-                        <IconButton component={Link} to={"/"}><ArrowBackIcon fontSize='large'/></IconButton>
+                        <IconButton component={Link} to={"/"} aria-label="العودة إلى الرئيسية"><ArrowBackIcon fontSize='large'/></IconButton>
                     </motion.div>
                     }
     
 
-                    <Stack rowGap={1} >
-                        <Typography variant='h4' fontWeight={500}>{'Order history'}</Typography>
-                        <Typography sx={{wordWrap:"break-word"}} color={'text.secondary'}>{'Check the status of recent orders, manage returns, and discover similar products.'}</Typography>
+                    <Stack rowGap={0.5} flex={1}>
+                        <Typography variant='h4' fontWeight={500}>{'سجل الطلبات'}</Typography>
+                        <Typography sx={{wordWrap:"break-word"}} color={'text.secondary'}>{'تابع حالة طلباتك الأخيرة واستعرض تفاصيلها ومنتجاتها.'}</Typography>
                     </Stack>
 
                 </Stack>
 
                 {/* orders */}
-                <Stack mt={5} width="100%" minWidth={0}>
+                <Stack mt={3} width="100%" minWidth={0}>
                         {orders.length>0 && (
                             <TableContainer
                                 component={Paper}
-                                elevation={1}
+                                elevation={0}
                                 tabIndex={0}
-                                aria-label="Scrollable order history table"
+                                aria-label="جدول سجل الطلبات القابل للتمرير"
                                 sx={{
                                     width:'100%',
                                     maxWidth:'100%',
                                     minWidth:0,
-                                    borderRadius:2,
+                                    border:'1px solid #e0e0e0',
+                                    borderRadius:0,
                                     overflowX:'auto',
                                     overscrollBehaviorX:'contain',
                                     WebkitOverflowScrolling:'touch'
                                 }}
                             >
-                                <Table size="small" sx={{minWidth:700}} aria-label={"Order history"}>
+                                <Table size="small" sx={{minWidth:620}} aria-label={"سجل الطلبات"}>
                                     <TableHead>
                                         <TableRow sx={{'& th':{color:'text.secondary',fontWeight:600,whiteSpace:'nowrap',borderBottom:'1px solid #e0e0e0'}}}>
                                             <TableCell padding="checkbox" />
-                                            <TableCell>{'Order'}</TableCell>
-                                            <TableCell>{'Items'}</TableCell>
-                                            <TableCell align="right">{'Total'}</TableCell>
-                                            <TableCell>{'Order date'}</TableCell>
-                                            <TableCell>{'Status'}</TableCell>
+                                            <TableCell>{'رقم الطلب'}</TableCell>
+                                            <TableCell>{'المنتجات'}</TableCell>
+                                            <TableCell align="right">{'الإجمالي'}</TableCell>
+                                            <TableCell>{'تاريخ الطلب'}</TableCell>
+                                            <TableCell>{'الحالة'}</TableCell>
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
@@ -160,7 +193,7 @@ export const UserOrders = () => {
                                                         <TableCell padding="checkbox">
                                                             <IconButton
                                                                 size="small"
-                                                                aria-label={expanded?'Hide order details':'Show order details'}
+                                                                aria-label={expanded?'إخفاء تفاصيل الطلب':'عرض تفاصيل الطلب'}
                                                                 aria-expanded={expanded}
                                                                 onClick={()=>setExpandedOrderId(expanded?'':order._id)}
                                                                 sx={{transform:expanded?'rotate(180deg)':'rotate(0deg)',transition:'transform 200ms ease'}}
@@ -174,17 +207,17 @@ export const UserOrders = () => {
                                                             </Typography>
                                                         </TableCell>
                                                         <TableCell sx={{whiteSpace:'nowrap'}}>
-                                                            {orderItems.length} {orderItems.length===1?'item':'items'}
+                                                            {orderItems.length} {orderItems.length===1?'منتج':'منتجات'}
                                                         </TableCell>
                                                         <TableCell align="right" sx={{whiteSpace:'nowrap',fontWeight:600}}>
-                                                            ${Number(order.total || 0).toLocaleString()}
+                                                            {formatCurrency(order.total)}
                                                         </TableCell>
                                                         <TableCell sx={{whiteSpace:'nowrap'}}>
-                                                            {Number.isNaN(new Date(order.createdAt).getTime())?'—':new Date(order.createdAt).toLocaleDateString()}
+                                                            {formatOrderDate(order.createdAt)}
                                                         </TableCell>
                                                         <TableCell>
                                                             <Chip
-                                                                label={order.status}
+                                                                label={orderStatusLabels[order.status] || order.status}
                                                                 size="small"
                                                                 sx={statusColors[order.status] || {bgcolor:'#f5f5f5'}}
                                                             />
@@ -196,10 +229,10 @@ export const UserOrders = () => {
                                                                 <Stack spacing={1.5} sx={{px:3,py:2,backgroundColor:'action.hover'}}>
                                                                     <Stack direction={{xs:'column',sm:'row'}} justifyContent="space-between" spacing={1}>
                                                                         <Typography variant="subtitle2">
-                                                                            {'Order'} #{order._id?.slice(-6).toUpperCase() || '—'} · {order.paymentMode || 'Payment method unavailable'}
+                                                                            {'الطلب'} #{order._id?.slice(-6).toUpperCase() || '—'} · {paymentModeLabels[order.paymentMode] || order.paymentMode || 'طريقة الدفع غير متاحة'}
                                                                         </Typography>
                                                                         <Typography variant="body2" color="text.secondary">
-                                                                            Total: ${Number(order.total || 0).toLocaleString()}
+                                                                            الإجمالي: {formatCurrency(order.total)}
                                                                         </Typography>
                                                                     </Stack>
                                                                     {orderItems.map((entry,index)=>{
@@ -217,29 +250,29 @@ export const UserOrders = () => {
                                                                                 <img
                                                                                     style={{width:56,height:56,objectFit:'contain',borderRadius:6,background:'#fff'}}
                                                                                     src={product.thumbnail || product.images?.[0] || ''}
-                                                                                    alt={product.title || 'Product'}
+                                                                                    alt={product.title || 'المنتج'}
                                                                                 />
                                                                                 <Stack flex={1} spacing={0.25}>
-                                                                                    <Typography variant="body2" fontWeight={600}>{product.title || 'Product'}</Typography>
+                                                                                    <Typography variant="body2" fontWeight={600}>{product.title || 'المنتج'}</Typography>
                                                                                     {product.brand?.name && (
                                                                                         <Typography variant="caption" color="text.secondary">{product.brand.name}</Typography>
                                                                                     )}
                                                                                     <Typography variant="caption" color="text.secondary">
-                                                                                        Quantity: {entry.quantity} · ${Number(product.price || 0).toLocaleString()} each
+                                                                                        الكمية: {entry.quantity} · {formatCurrency(product.price)} للقطعة
                                                                                     </Typography>
                                                                                 </Stack>
                                                                                 {product._id && (
                                                                                     <Stack direction="row" spacing={1}>
                                                                                         <Button size="small" component={Link} to={`/product-details/${product._id}`} variant="outlined">
-                                                                                            {'View product'}
+                                                                                            {'عرض المنتج'}
                                                                                         </Button>
                                                                                         {alreadyInCart ? (
                                                                                             <Button size="small" variant="contained" component={Link} to="/cart">
-                                                                                                {'Already in cart'}
+                                                                                                {'موجود في السلة'}
                                                                                             </Button>
                                                                                         ) : (
                                                                                             <Button size="small" variant="contained" onClick={()=>handleAddToCart(product)}>
-                                                                                                {'Buy again'}
+                                                                                                {'اشترِ مرة أخرى'}
                                                                                             </Button>
                                                                                         )}
                                                                                     </Stack>
@@ -268,7 +301,7 @@ export const UserOrders = () => {
                                     <Lottie animationData={noOrdersAnimation}/>
                                 </Stack>
 
-                                <Typography textAlign={'center'} alignSelf={'center'} variant='h6' >{"oh! Looks like you haven't been shopping lately"}</Typography>
+                                <Typography textAlign={'center'} alignSelf={'center'} variant='h6' >{"لا توجد طلبات حتى الآن. ابدأ التسوق الآن!"}</Typography>
 
                             </Stack>
                         }

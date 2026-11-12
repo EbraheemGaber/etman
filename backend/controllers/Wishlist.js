@@ -2,7 +2,7 @@ const Wishlist = require("../models/Wishlist")
 
 exports.create=async(req,res)=>{
     try {
-        const created=await new Wishlist(req.body).populate({path:"product",populate:["brand"]})
+        const created=await new Wishlist({...req.body,user:req.user._id}).populate({path:"product",populate:["brand"]})
         await created.save()
         res.status(201).json(created)
     } catch (error) {
@@ -13,6 +13,9 @@ exports.create=async(req,res)=>{
 exports.getByUserId=async(req,res)=>{
     try {
         const {id}=req.params
+        if(String(req.user._id)!==id){
+            return res.status(403).json({message:"You can only access your own wishlist"})
+        }
         let skip=0
         let limit=0
 
@@ -37,7 +40,14 @@ exports.getByUserId=async(req,res)=>{
 exports.updateById=async(req,res)=>{
     try {
         const {id}=req.params
-        const updated=await Wishlist.findByIdAndUpdate(id,req.body,{new:true}).populate("product")
+        const updated=await Wishlist.findOneAndUpdate(
+            {_id:id,user:req.user._id},
+            {$set:{note:req.body.note}},
+            {new:true,runValidators:true}
+        ).populate("product")
+        if(!updated){
+            return res.status(404).json({message:"Wishlist item not found"})
+        }
         res.status(200).json(updated)
     } catch (error) {
         console.log(error);
@@ -47,7 +57,10 @@ exports.updateById=async(req,res)=>{
 exports.deleteById=async(req,res)=>{
     try {
         const {id}=req.params
-        const deleted=await Wishlist.findByIdAndDelete(id)
+        const deleted=await Wishlist.findOneAndDelete({_id:id,user:req.user._id})
+        if(!deleted){
+            return res.status(404).json({message:"Wishlist item not found"})
+        }
         return res.status(200).json(deleted)
     } catch (error) {
         console.log(error);

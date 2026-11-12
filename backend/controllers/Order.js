@@ -2,7 +2,8 @@ const Order = require("../models/Order");
 
 exports.create=async(req,res)=>{
     try {
-        const created=new Order(req.body)
+        const {item,address,paymentMode,total}=req.body
+        const created=new Order({user:req.user._id,item,address,paymentMode,total})
         await created.save()
         res.status(201).json(created)
     } catch (error) {
@@ -14,6 +15,9 @@ exports.create=async(req,res)=>{
 exports.getByUserId=async(req,res)=>{
     try {
         const {id}=req.params
+        if(String(req.user._id)!==id){
+            return res.status(403).json({message:"You can only access your own orders"})
+        }
         const results=await Order.find({user:id}).sort({createdAt:-1,_id:-1})
         res.status(200).json(results)
     } catch (error) {
@@ -148,7 +152,10 @@ exports.getStatistics = async (req, res) => {
 exports.updateById=async(req,res)=>{
     try {
         const {id}=req.params
-        const updated=await Order.findByIdAndUpdate(id,req.body,{new:true})
+        const updated=await Order.findByIdAndUpdate(id,{$set:{status:req.body.status}},{new:true,runValidators:true})
+        if(!updated){
+            return res.status(404).json({message:"Order not found"})
+        }
         res.status(200).json(updated)
     } catch (error) {
         console.log(error);

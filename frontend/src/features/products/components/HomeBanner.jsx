@@ -13,7 +13,7 @@ export const HomeBanner=()=>{
   return (
     <Box
       component="section"
-      aria-label="مجموعة عثمان"
+      aria-label="عتمان جروب"
       dir="rtl"
       lang="ar"
       sx={{
@@ -33,22 +33,24 @@ export const HomeBanner=()=>{
           mx:'auto',
           overflow:'hidden',
           borderRadius:{xs:3,md:4},
-          color:'#fff',
-          background:'radial-gradient(circle at 18% 18%,rgba(255,255,255,.2),transparent 30%),linear-gradient(125deg,#790000 0%,#a3151b 48%,#c62828 100%)',
-          boxShadow:'0 18px 42px rgba(142,0,0,.2)'
+          color:'#b71c1c',
+          background:'linear-gradient(135deg,#fff 0%,#fffafa 58%,#fff3f3 100%)',
+          border:'1px solid #f3dddd',
+          boxShadow:'0 12px 32px rgba(125,35,35,.08)'
         }}
       >
         <Box
           aria-hidden="true"
           sx={{
+            display:{xs:'none',lg:'block'},
             position:'absolute',
             width:{xs:280,sm:390},
             height:{xs:280,sm:390},
             left:{xs:'-22%',sm:'-5%',md:'8%'},
             bottom:{xs:'-25%',sm:'-34%',md:'-25%'},
-            border:'1px solid rgba(255,255,255,.18)',
+            border:'1px solid rgba(198,40,40,.12)',
             borderRadius:'50%',
-            boxShadow:'0 0 0 28px rgba(255,255,255,.035),0 0 0 62px rgba(255,255,255,.025),0 0 0 100px rgba(255,255,255,.018)'
+            boxShadow:'0 0 0 28px rgba(198,40,40,.035),0 0 0 62px rgba(198,40,40,.025),0 0 0 100px rgba(198,40,40,.018)'
           }}
         />
         <Stack
@@ -68,14 +70,15 @@ export const HomeBanner=()=>{
               px:1.5,
               py:.5,
               borderRadius:99,
-              bgcolor:'rgba(255,255,255,.14)',
-              border:'1px solid rgba(255,255,255,.22)',
+              bgcolor:'#fff',
+              color:'#b71c1c',
+              border:'1px solid #f0d4d4',
               fontSize:12,
               fontWeight:700,
               letterSpacing:.3
             }}
           >
-            {'ETMAN GROUP'}
+            {'عتمان جروب'}
           </Typography>
           <Typography
             component="h1"
@@ -86,12 +89,12 @@ export const HomeBanner=()=>{
               textWrap:'balance'
             }}
           >
-            {'مجموعة عثمان'}
-            <Box component="span" sx={{display:'block',color:'#ffe2e2'}}>
+            {'عتمان جروب'}
+            <Box component="span" sx={{display:'block',color:'#c62828'}}>
               {'هوية تثق بها'}
             </Box>
           </Typography>
-          <Typography sx={{maxWidth:440,color:'rgba(255,255,255,.86)',fontSize:{xs:14,sm:16},lineHeight:1.9}}>
+          <Typography sx={{maxWidth:440,color:'#70666a',fontSize:{xs:14,sm:16},lineHeight:1.9}}>
             {'اسم يجمع بين الثقة والجودة، ورؤية تضع رضاكم في المقدمة.'}
           </Typography>
           <Button
@@ -104,10 +107,10 @@ export const HomeBanner=()=>{
               px:3,
               py:1.1,
               borderRadius:99,
-              bgcolor:'#fff',
-              color:'#a3151b',
+              bgcolor:'#c62828',
+              color:'#fff',
               fontWeight:800,
-              '&:hover':{bgcolor:'#fff1f1',transform:'translateY(-2px)'},
+              '&:hover':{bgcolor:'#a3151b',transform:'translateY(-2px)'},
               transition:'transform .2s ease,background-color .2s ease'
             }}
           >
@@ -116,20 +119,20 @@ export const HomeBanner=()=>{
         </Stack>
 
         <Box
-          aria-label="هوية مجموعة عثمان"
+          aria-label="هوية عتمان جروب"
           sx={{
+            display:{xs:'none',lg:'grid'},
             position:'absolute',
             left:{xs:'50%',sm:'56%',md:'8%'},
             top:{xs:'55%',sm:'53%',md:'50%'},
             transform:{xs:'translate(-50%,-20%)',sm:'translate(-50%,-15%)',md:'translateY(-50%)'},
             width:{xs:220,sm:280,md:360},
             height:{xs:220,sm:280,md:360},
-            display:'grid',
             placeItems:'center',
             borderRadius:'50%',
-            border:'1px solid rgba(255,255,255,.32)',
-            bgcolor:'rgba(255,255,255,.06)',
-            boxShadow:'0 0 0 14px rgba(255,255,255,.035),inset 0 0 60px rgba(255,255,255,.08)',
+            border:'1px solid rgba(198,40,40,.18)',
+            bgcolor:'rgba(198,40,40,.025)',
+            boxShadow:'0 0 0 14px rgba(198,40,40,.035),inset 0 0 60px rgba(198,40,40,.045)',
             pointerEvents:'none'
           }}
         >
@@ -145,20 +148,20 @@ export const HomeBanner=()=>{
               justifyContent:'center',
               gap:.25,
               borderRadius:'50%',
-              border:'1px solid rgba(255,255,255,.42)',
-              bgcolor:'rgba(255,255,255,.95)',
-              color:'#a3151b',
-              boxShadow:'0 24px 48px rgba(70,0,0,.28)'
+              border:'1px solid #f0dddd',
+              bgcolor:'#fff',
+              color:'#b71c1c',
+              boxShadow:'0 18px 40px rgba(70,0,0,.1)'
             }}
           >
             <Typography aria-hidden="true" sx={{fontFamily:'Georgia,serif !important',fontSize:{xs:64,sm:82,md:104},fontWeight:700,lineHeight:.9}}>
               {'E'}
             </Typography>
             <Typography sx={{fontFamily:'Arial,sans-serif !important',fontSize:{xs:12,sm:14},fontWeight:800,letterSpacing:{xs:2,sm:3}}}>
-              {'ETMAN'}
+              {'عتمان'}
             </Typography>
             <Typography sx={{fontSize:{xs:10,sm:12},fontWeight:700}}>
-              {'مجموعة عثمان'}
+              {'عتمان جروب'}
             </Typography>
           </Box>
         </Box>

@@ -1,5 +1,6 @@
 import {FormControl, Grid, IconButton, InputLabel, MenuItem, Select, Stack, Typography, useMediaQuery, useTheme } from '@mui/material'
 import React, { useEffect, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { fetchProductsAsync, resetProductFetchStatus, selectProductFetchStatus, selectProductIsFilterOpen, selectProductTotalResults, selectProducts, toggleFilters } from '../ProductSlice'
 import { ProductCard } from './ProductCard'
@@ -31,6 +32,8 @@ const sortOptions=[
 
 
 export const ProductList = ({categoryId}) => {
+    const navigate=useNavigate()
+    const location=useLocation()
     const [filters,setFilters]=useState(()=>categoryId?{category:[categoryId]}:{})
     const [page,setPage]=useState(1)
     const [sort,setSort]=useState(null)
@@ -115,6 +118,11 @@ export const ProductList = ({categoryId}) => {
 
 
     const handleAddRemoveFromWishlist=(e,productId)=>{
+        if(!loggedInUser?.isVerified){
+            e.preventDefault()
+            navigate('/login',{state:{from:location}})
+            return
+        }
         if(e.target.checked){
             const data={user:loggedInUser?._id,product:productId}
             dispatch(createWishlistItemAsync(data))

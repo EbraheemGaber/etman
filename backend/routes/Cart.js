@@ -1,6 +1,10 @@
 const express=require('express')
 const cartController=require('../controllers/Cart')
+const {verifyToken}=require('../middleware/VerifyToken')
+const {requireVerified}=require('../middleware/RequireVerified')
 const router=express.Router()
+
+router.use(verifyToken,requireVerified)
 
 router
     .post("/",cartController.create)

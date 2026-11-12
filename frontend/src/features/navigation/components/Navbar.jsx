@@ -57,12 +57,15 @@ export const Navbar=({isProductList=false})=> {
     dispatch(toggleFilters())
   }
 
-  const settings = [
+  const settings = loggedInUser ? [
     {name:isSalesperson?'الرئيسية':'Home',to:isSalesperson?"/sales/request-order":"/"},
     {name:isSalesperson?'الملف الشخصي':'Profile',to:loggedInUser?.isAdmin?"/admin/profile":"/profile"},
     ...(!isSalesperson && !isAdmin?[{name:'My orders',to:'/orders'}]:[]),
     ...(isAdmin?[{name:'Manage salespeople',to:'/admin/salespeople'}]:[]),
     ...(isSalesperson?[{name:'لوحة المبيعات',to:'/sales/dashboard'}]:[]),
+  ] : [
+    {name:'تسجيل الدخول',to:'/login'},
+    {name:'إنشاء حساب',to:'/signup'}
   ]
 
   return (
@@ -98,7 +101,9 @@ export const Navbar=({isProductList=false})=> {
               textDecoration:'none',
               fontWeight:800,
               letterSpacing:{xs:'.08rem',sm:'.16rem'},
-              fontSize:{xs:'.95rem',sm:'1.2rem'}
+              fontSize:{xs:'.95rem',sm:'1.2rem'},
+              fontFamily:'Arial, Helvetica, sans-serif',
+              textTransform:'uppercase'
             }}
           >
             ETMAN GROUP
@@ -215,13 +220,26 @@ export const Navbar=({isProductList=false})=> {
         )}
 
         <Stack direction="row" alignItems="center" spacing={{xs:.25,sm:1}} sx={{display:isMobileStorefront?'none':'flex'}}>
-          <Button
-            component={Link}
-            to="/logout"
-            sx={{color:'inherit',fontWeight:600,'&:hover':{bgcolor:'rgba(255,255,255,.12)'}}}
-          >
-            {'تسجيل خروج'}
-          </Button>
+          {loggedInUser && (
+            <Button
+              component={Link}
+              to="/logout"
+              sx={{color:'inherit',fontWeight:600,'&:hover':{bgcolor:'rgba(255,255,255,.12)'}}}
+            >
+              {'تسجيل خروج'}
+            </Button>
+          )}
+          {!loggedInUser && (
+            <Button
+              component={Link}
+              to="/login"
+              state={{from:location}}
+              size="small"
+              sx={{color:'inherit',fontWeight:700,whiteSpace:'nowrap','&:hover':{bgcolor:'rgba(255,255,255,.12)'}}}
+            >
+              {'تسجيل دخول'}
+            </Button>
+          )}
 
           {isCustomer && !is480 && (
             <Button
@@ -318,7 +336,7 @@ export const Navbar=({isProductList=false})=> {
                 </Typography>
               </MenuItem>
             ))}
-            {isMobileStorefront && (
+            {isMobileStorefront && loggedInUser && (
               <MenuItem component={Link} to="/logout" onClick={handleCloseUserMenu}>
                 Log out
               </MenuItem>
@@ -342,6 +360,27 @@ export const Navbar=({isProductList=false})=> {
             </IconButton>
           )}
         </Stack>
+        {isMobileStorefront && !loggedInUser && (
+          <Button
+            component={Link}
+            to="/login"
+            state={{from:location}}
+            size="small"
+            sx={{
+              flexShrink:0,
+              px:1,
+              minWidth:0,
+              color:brandRed,
+              bgcolor:'#fff',
+              fontSize:{xs:'.68rem',sm:'.8rem'},
+              fontWeight:700,
+              whiteSpace:'nowrap',
+              '&:hover':{bgcolor:'#fff5f5'}
+            }}
+          >
+            {'تسجيل دخول'}
+          </Button>
+        )}
       </Toolbar>
 
       {isCustomer && categories.length > 0 && !isMobileStorefront && (

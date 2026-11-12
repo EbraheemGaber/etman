@@ -7,10 +7,19 @@ const initialState={
     errors:null
 }
 
-export const fetchAllCategoriesAsync=createAsyncThunk('categories/fetchAllCategoriesAsync',async()=>{
-    const categories=await fetchAllCategories()
-    return categories
-})
+export const fetchAllCategoriesAsync=createAsyncThunk(
+    'categories/fetchAllCategoriesAsync',
+    async()=>{
+        const categories=await fetchAllCategories()
+        return categories
+    },
+    {
+        condition:(_, {getState})=>{
+            const status=getState().CategoriesSlice.status
+            return status!=='pending' && status!=='fulfilled'
+        }
+    }
+)
 
 const categorySlice=createSlice({
     name:"categorySlice",
@@ -19,7 +28,8 @@ const categorySlice=createSlice({
     extraReducers:(builder)=>{
         builder
             .addCase(fetchAllCategoriesAsync.pending,(state)=>{
-                state.status='idle'
+                state.status='pending'
+                state.errors=null
             })
             .addCase(fetchAllCategoriesAsync.fulfilled,(state,action)=>{
                 state.status='fulfilled'

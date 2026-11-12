@@ -1,6 +1,6 @@
 import { Box, Card, Checkbox, Chip, Stack, Typography } from '@mui/material'
 import React from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import FavoriteBorder from '@mui/icons-material/FavoriteBorder';
 import Favorite from '@mui/icons-material/Favorite';
 import LayersOutlinedIcon from '@mui/icons-material/LayersOutlined'
@@ -32,6 +32,7 @@ export const ProductCard = ({
     isGridCard=false
 }) => {
     const navigate=useNavigate()
+    const location=useLocation()
     const wishlistItems=useSelector(selectWishlistItems)
     const loggedInUser=useSelector(selectLoggedInUser)
     const cartItems=useSelector(selectCartItems)
@@ -44,11 +45,19 @@ export const ProductCard = ({
 
     const handleAddToCart=(event)=>{
         event.stopPropagation()
+        if(!loggedInUser?.isVerified){
+            navigate('/login',{state:{from:location}})
+            return
+        }
         dispatch(addToCartAsync({user:loggedInUser?._id,product:id}))
     }
 
     const handleWishlistChange=(event)=>{
         event.stopPropagation()
+        if(!loggedInUser?.isVerified){
+            navigate('/login',{state:{from:location}})
+            return
+        }
         handleAddRemoveFromWishlist?.(event,id)
     }
 
@@ -161,6 +170,10 @@ export const ProductCard = ({
                         aria-label={isProductAlreadyInCart?'View cart':'Add to cart'}
                         onClick={(event)=>{
                             event.stopPropagation()
+                            if(!loggedInUser?.isVerified){
+                                navigate('/login',{state:{from:location}})
+                                return
+                            }
                             if(isProductAlreadyInCart) navigate('/cart')
                             else handleAddToCart(event)
                         }}

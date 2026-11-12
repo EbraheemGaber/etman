@@ -326,6 +326,18 @@
 				"build"
 			],
 			"isBackground": false
+		},
+		{
+			"label": "Inspect git state",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"--no-pager",
+				"status",
+				"--short",
+				"--branch"
+			],
+			"isBackground": false
 		}
 	]
 }

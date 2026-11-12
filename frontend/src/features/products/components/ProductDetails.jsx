@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   Box,
   Button,
@@ -52,6 +52,7 @@ import { loadingAnimation } from "../../../assets";
 
 export const ProductDetails = () => {
   const { id } = useParams();
+  const location = useLocation();
   const product = useSelector(selectSelectedProduct);
   const loggedInUser = useSelector(selectLoggedInUser);
   const dispatch = useDispatch();
@@ -152,8 +153,8 @@ export const ProductDetails = () => {
   );
 
   const handleAddToCart = () => {
-    if (!loggedInUser) {
-      navigate("/login");
+    if (!loggedInUser?.isVerified) {
+      navigate("/login", { state: { from: location } });
       return;
     }
     dispatch(addToCartAsync({ user: loggedInUser._id, product: id, quantity }));
@@ -161,8 +162,8 @@ export const ProductDetails = () => {
   };
 
   const handleWishlistToggle = () => {
-    if (!loggedInUser) {
-      navigate("/login");
+    if (!loggedInUser?.isVerified) {
+      navigate("/login", { state: { from: location } });
       return;
     }
     if (isProductAlreadyInWishlist) {

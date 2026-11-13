@@ -1,12 +1,12 @@
 import React from 'react'
 import { Navbar } from '../features/navigation/components/Navbar'
-import { AdminStatistics } from '../features/admin/components/AdminStatistics'
+import { AdminDashBoard } from '../features/admin/components/AdminDashBoard'
 
 export const AdminStatisticsPage=()=>{
   return (
     <>
-      <Navbar />
-      <AdminStatistics />
+      <Navbar isProductList={true}/>
+      <AdminDashBoard showStatisticsLink={false}/>
     </>
   )
 }

@@ -1,5 +1,6 @@
 import { axiosi } from '../../config/axios'
 import { fetchCachedGet } from '../../config/apiQuery'
+import { invalidateApiQueries } from '../../config/queryClient'
 
 export const createSalesRequest=async(data)=>{
   try{
@@ -72,6 +73,7 @@ export const getAllSalesRequests=async()=>{
 export const updateSalesRequestStatus=async(id,status)=>{
   try{
     const response=await axiosi.patch(`/sales-requests/${id}/status`,{status})
+    await invalidateApiQueries('sales-requests')
     return response.data
   }catch(error){
     throw error.response?.data || error

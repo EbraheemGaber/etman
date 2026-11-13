@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react'
-import { Alert, Box, Button, ButtonBase, CircularProgress, Stack, Typography, useMediaQuery, useTheme } from '@mui/material'
+import React, { useEffect, useRef, useState } from 'react'
+import { Alert, Box, Button, ButtonBase, CircularProgress, Stack, Typography } from '@mui/material'
 import { Link } from 'react-router-dom'
 import { motion, useReducedMotion } from 'framer-motion'
 import { useDispatch, useSelector } from 'react-redux'
@@ -8,20 +8,25 @@ import { fetchAllCategoriesAsync, selectCategories, selectCategoryErrors, select
 import { ProductCard } from './ProductCard'
 import { selectWishlistItems, createWishlistItemAsync, deleteWishlistItemByIdAsync } from '../../wishlist/WishlistSlice'
 import { selectLoggedInUser } from '../../auth/AuthSlice'
+import { getCategoryTreeIds, getRootCategories } from '../../categories/categoryUtils'
 
 export const CategoryHome=()=>{
   const categories=useSelector(selectCategories)
   const categoryStatus=useSelector(selectCategoryStatus)
   const categoryErrors=useSelector(selectCategoryErrors)
+  const topLevelCategories=getRootCategories(categories)
   const wishlistItems=useSelector(selectWishlistItems)
   const loggedInUser=useSelector(selectLoggedInUser)
   const dispatch=useDispatch()
   const prefersReducedMotion=useReducedMotion()
-  const theme=useTheme()
-  const isMobile=useMediaQuery(theme.breakpoints.down('sm'))
   const [productsByCategory,setProductsByCategory]=useState({})
   const [error,setError]=useState('')
   const [loading,setLoading]=useState(false)
+  const [isTouchingCategories,setIsTouchingCategories]=useState(false)
+  const categoryRailRef=useRef(null)
+  const firstCategoryGroupRef=useRef(null)
+  const touchResumeTimerRef=useRef(null)
+
   useEffect(()=>{
     if(categoryStatus==='idle'){
       dispatch(fetchAllCategoriesAsync())
@@ -29,15 +34,15 @@ export const CategoryHome=()=>{
   },[categoryStatus,dispatch])
 
   useEffect(()=>{
-    if(!categories.length || categoryStatus!=='fulfilled') return undefined
+    if(!topLevelCategories.length || categoryStatus!=='fulfilled') return undefined
 
     let active=true
     setLoading(true)
     setError('')
 
-    Promise.all(categories.map(async(category)=>{
+    Promise.all(topLevelCategories.map(async(category)=>{
       const result=await fetchProducts({
-        category:[category._id],
+        category:getCategoryTreeIds(category._id,categories),
         pagination:{page:1,limit:8},
         user:true
       })
@@ -55,6 +60,51 @@ export const CategoryHome=()=>{
 
     return ()=>{active=false}
   },[categories,categoryStatus])
+
+  useEffect(()=>{
+    if(
+      prefersReducedMotion ||
+      !categories.length ||
+      isTouchingCategories ||
+      typeof window.matchMedia!=='function' ||
+      !window.matchMedia('(hover: none) and (pointer: coarse)').matches
+    ) return undefined
+
+    const rail=categoryRailRef.current
+    const firstGroup=firstCategoryGroupRef.current
+    if(!rail || !firstGroup) return undefined
+
+    let frameId
+    let previousFrameTime
+    const autoScroll=(timestamp)=>{
+      if(previousFrameTime!==undefined){
+        const elapsed=Math.min(timestamp-previousFrameTime,32)
+        const loopWidth=firstGroup.offsetWidth
+        if(loopWidth>0){
+          rail.scrollLeft+=elapsed*.02
+          if(rail.scrollLeft>=loopWidth) rail.scrollLeft-=loopWidth
+        }
+      }
+
+      previousFrameTime=timestamp
+      frameId=window.requestAnimationFrame(autoScroll)
+    }
+
+    frameId=window.requestAnimationFrame(autoScroll)
+    return ()=>window.cancelAnimationFrame(frameId)
+  },[categories.length,isTouchingCategories,prefersReducedMotion])
+
+  useEffect(()=>()=>clearTimeout(touchResumeTimerRef.current),[])
+
+  const pauseCategoryAutoScroll=()=>{
+    clearTimeout(touchResumeTimerRef.current)
+    setIsTouchingCategories(true)
+  }
+
+  const resumeCategoryAutoScroll=()=>{
+    clearTimeout(touchResumeTimerRef.current)
+    touchResumeTimerRef.current=setTimeout(()=>setIsTouchingCategories(false),800)
+  }
 
   const handleAddRemoveFromWishlist=(event,productId)=>{
     if(event.target.checked){
@@ -78,7 +128,7 @@ export const CategoryHome=()=>{
         </Alert>
       )}
       {error && <Alert severity="error" sx={{mx:2}}>{error}</Alert>}
-      {!!categories.length && (
+      {!!topLevelCategories.length && (
         <Box component="nav" aria-label="تسوق حسب الفئة" dir="rtl" lang="ar">
           <Stack spacing={.5} px={{xs:2,md:4}} mb={1}>
             <Typography sx={{color:'#a34a4e',fontSize:12,fontWeight:800,letterSpacing:.5}}>
@@ -88,20 +138,34 @@ export const CategoryHome=()=>{
               {'تسوق حسب الفئة'}
             </Typography>
           </Stack>
-          <Box sx={{
-            overflow:'hidden',
-            direction:'ltr',
-            px:{xs:2,md:4},
-            pb:1,
-            '@media (prefers-reduced-motion: reduce)':{
-              overflowX:'auto',
-              scrollbarWidth:'none',
-              '&::-webkit-scrollbar':{display:'none'}
-            },
-            '&:hover .category-rail-track, &:focus-within .category-rail-track':{
-              animationPlayState:'paused'
-            }
-          }}>
+          <Box
+            ref={categoryRailRef}
+            onTouchStart={pauseCategoryAutoScroll}
+            onTouchEnd={resumeCategoryAutoScroll}
+            onTouchCancel={resumeCategoryAutoScroll}
+            sx={{
+              overflow:'hidden',
+              direction:'ltr',
+              px:{xs:2,md:4},
+              pb:1,
+              '@media (prefers-reduced-motion: reduce)':{
+                overflowX:'auto',
+                scrollbarWidth:'none',
+                '&::-webkit-scrollbar':{display:'none'}
+              },
+              '@media (hover: none) and (pointer: coarse)':{
+                overflowX:'auto',
+                overflowY:'hidden',
+                WebkitOverflowScrolling:'touch',
+                scrollSnapType:'x mandatory',
+                scrollbarWidth:'none',
+                '&::-webkit-scrollbar':{display:'none'}
+              },
+              '&:hover .category-rail-track, &:focus-within .category-rail-track':{
+                animationPlayState:'paused'
+              }
+            }}
+          >
             <Box
               className="category-rail-track"
               dir="ltr"
@@ -114,7 +178,8 @@ export const CategoryHome=()=>{
                   from:{transform:'translateX(0)'},
                   to:{transform:'translateX(-50%)'}
                 },
-                '@media (prefers-reduced-motion: reduce)':{animation:'none'}
+                '@media (prefers-reduced-motion: reduce)':{animation:'none'},
+                '@media (hover: none) and (pointer: coarse)':{animation:'none'}
               }}
             >
               {[false,true].map((isDuplicate)=>(
@@ -127,10 +192,14 @@ export const CategoryHome=()=>{
                     gap:1.5,
                     pr:1.5,
                     flexShrink:0,
+                    ...(isDuplicate?{
+                      '@media (prefers-reduced-motion: reduce)':{display:'none'}
+                    }:{}),
                     '& > *':{flexShrink:0}
                   }}
+                  ref={isDuplicate?undefined:firstCategoryGroupRef}
                 >
-                  {categories.map((category)=>{
+                  {topLevelCategories.map((category)=>{
                     const thumbnail=productsByCategory[category._id]?.[0]?.thumbnail
 
                     return (
@@ -150,6 +219,7 @@ export const CategoryHome=()=>{
                           borderRadius:2.5,
                           color:'text.primary',
                           textAlign:'center',
+                          scrollSnapAlign:'start',
                           '&:hover .category-image':{transform:'translateY(-2px)',boxShadow:'0 5px 14px rgba(0,0,0,.1)'}
                         }}
                       >
@@ -213,7 +283,7 @@ export const CategoryHome=()=>{
       {loading && !Object.keys(productsByCategory).length && (
         <Stack alignItems="center" py={2}><CircularProgress /></Stack>
       )}
-      {categories.map((category,index)=>{
+      {topLevelCategories.map((category,index)=>{
         const categoryProducts=productsByCategory[category._id] || []
         if(!categoryProducts.length) return null
 
@@ -232,17 +302,28 @@ export const CategoryHome=()=>{
               </Button>
             </Stack>
 
-            <Box sx={{
-              display:{xs:'grid',sm:'flex'},
-              gridTemplateColumns:{xs:'repeat(2, minmax(0, 1fr))'},
-              gap:{xs:1,sm:2},
-              overflowX:{xs:'visible',sm:'auto'},
-              px:{xs:2,md:4},
-              pb:2,
-              scrollSnapType:{sm:'x mandatory'},
-              '& > *':{scrollSnapAlign:'start',flexShrink:0}
-            }}>
-              {(isMobile ? categoryProducts.slice(0, 2) : categoryProducts).map((product,productIndex)=>(
+            <Box
+              role="region"
+              aria-label={`${category.name} المنتجات`}
+              tabIndex={0}
+              dir="ltr"
+              sx={{
+                display:'flex',
+                gap:{xs:1,sm:2},
+                overflowX:'auto',
+                overflowY:'hidden',
+                px:{xs:2,md:4},
+                pb:2,
+                direction:'ltr',
+                WebkitOverflowScrolling:'touch',
+                scrollSnapType:'x mandatory',
+                scrollbarWidth:'none',
+                '&::-webkit-scrollbar':{display:'none'},
+                '& > *':{scrollSnapAlign:'start',flexShrink:0},
+                '&:focus-visible':{outline:'2px solid',outlineColor:'primary.main',outlineOffset:2}
+              }}
+            >
+              {categoryProducts.map((product,productIndex)=>(
                 <Box
                   component={motion.div}
                   key={product._id}
@@ -254,13 +335,12 @@ export const CategoryHome=()=>{
                     delay:prefersReducedMotion?0:Math.min(productIndex*.07,.35),
                     ease:'easeOut'
                   }}
-                  sx={{width:{xs:'100%',sm:264},minWidth:0,flexShrink:0}}
+                  sx={{width:{xs:'78vw',sm:264},maxWidth:264,minWidth:0,flexShrink:0}}
                 >
                   <ProductCard
                     id={product._id}
                     title={product.title}
                     thumbnail={product.thumbnail}
-                    brand={product.brand?.name || ''}
                     price={product.price}
                     priceIsEstimate={product.priceIsEstimate}
                     discountPercentage={product.discountPercentage}

@@ -1,5 +1,6 @@
 require("dotenv").config()
 const express=require('express')
+const http=require('http')
 const path=require("path")
 const cors=require('cors')
 const { isIP }=require('net')
@@ -17,6 +18,7 @@ const addressRoutes=require('./routes/Address')
 const reviewRoutes=require("./routes/Review")
 const wishlistRoutes=require("./routes/Wishlist")
 const { connectToDB } = require("./database/db")
+const { createRealtimeServer } = require("./realtime")
 
 
 // server init
@@ -40,6 +42,12 @@ const isAllowedLocalFrontend=(origin)=>{
     }
 }
 
+const isAllowedFrontend=(origin)=>(
+    !origin
+    || origin===process.env.ORIGIN
+    || isAllowedLocalFrontend(origin)
+)
+
 // database connection
 connectToDB()
 
@@ -47,7 +55,7 @@ connectToDB()
 // middlewares
 server.use(cors({
     origin:(origin,callback)=>{
-        if(!origin || origin===process.env.ORIGIN || isAllowedLocalFrontend(origin)){
+        if(isAllowedFrontend(origin)){
             return callback(null,true)
         }
         return callback(new Error('Origin is not allowed by CORS'))
@@ -80,6 +88,10 @@ server.get("/",(req,res)=>{
     res.status(200).json({message:'running'})
 })
 
-server.listen(8000,()=>{
+const httpServer=http.createServer(server)
+const io=createRealtimeServer(httpServer,isAllowedFrontend)
+server.set('io',io)
+
+httpServer.listen(8000,()=>{
     console.log('server [STARTED] ~ http://localhost:8000');
 })

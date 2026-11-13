@@ -7,6 +7,7 @@ const initialState={
     orderUpdateStatus:"idle",
     orderFetchStatus:"idle",
     orders:[],
+    realtimeOrderIds:[],
     currentOrder:null,
     errors:null,
     successMessage:null
@@ -42,6 +43,18 @@ const orderSlice=createSlice({
     name:'orderSlice',
     initialState:initialState,
     reducers:{
+        orderReceived:(state,action)=>{
+            const order=action.payload
+            if(!order?._id) return
+            const orderId=String(order._id)
+            if(!state.realtimeOrderIds.includes(orderId)){
+                state.realtimeOrderIds.push(orderId)
+            }
+            state.orders=sortOrdersNewestFirst([
+                order,
+                ...state.orders.filter((current)=>String(current._id)!==orderId)
+            ])
+        },
         resetCurrentOrder:(state)=>{
             state.currentOrder=null
         },
@@ -72,7 +85,12 @@ const orderSlice=createSlice({
             })
             .addCase(getAllOrdersAsync.fulfilled,(state,action)=>{
                 state.orderFetchStatus='fulfilled'
-                state.orders=sortOrdersNewestFirst(action.payload)
+                const incomingIds=new Set(action.payload.map((order)=>String(order._id)))
+                const realtimeOrders=state.orders.filter((order)=>(
+                    state.realtimeOrderIds.includes(String(order._id))
+                    && !incomingIds.has(String(order._id))
+                ))
+                state.orders=sortOrdersNewestFirst([...action.payload,...realtimeOrders])
             })
             .addCase(getAllOrdersAsync.rejected,(state,action)=>{
                 state.orderFetchStatus='rejected'
@@ -84,7 +102,13 @@ const orderSlice=createSlice({
             })
             .addCase(getOrderByUserIdAsync.fulfilled,(state,action)=>{
                 state.orderFetchStatus='fulfilled'
-                state.orders=sortOrdersNewestFirst(action.payload)
+                const incomingIds=new Set(action.payload.map((order)=>String(order._id)))
+                const realtimeOrders=state.orders.filter((order)=>(
+                    state.realtimeOrderIds.includes(String(order._id))
+                    && String(order.user?._id || order.user)===String(action.meta.arg)
+                    && !incomingIds.has(String(order._id))
+                ))
+                state.orders=sortOrdersNewestFirst([...action.payload,...realtimeOrders])
             })
             .addCase(getOrderByUserIdAsync.rejected,(state,action)=>{
                 state.orderFetchStatus='rejected'
@@ -107,7 +131,7 @@ const orderSlice=createSlice({
 })
 
 // exporting reducers
-export const {resetCurrentOrder,resetOrderUpdateStatus,resetOrderFetchStatus}=orderSlice.actions
+export const {orderReceived,resetCurrentOrder,resetOrderUpdateStatus,resetOrderFetchStatus}=orderSlice.actions
 
 // exporting selectors
 export const selectOrderStatus=(state)=>state.OrderSlice.status

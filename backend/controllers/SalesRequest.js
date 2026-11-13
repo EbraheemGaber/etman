@@ -64,6 +64,17 @@ exports.create=async(req,res)=>{
             items:requestItems,
             total
         })
+        const requestForEvent={
+            ...created.toObject(),
+            salesperson:{
+                _id:req.user._id,
+                email:req.user.email
+            }
+        }
+        req.app.get('io')
+            .to('admins')
+            .to(`salesperson:${req.user._id}`)
+            .emit('sales-request:created',{request:requestForEvent})
         res.status(201).json(created)
     } catch(error) {
         console.log(error)

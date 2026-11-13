@@ -8,7 +8,6 @@ import Accordion from '@mui/material/Accordion';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import AccordionDetails from '@mui/material/AccordionDetails';
 import AddIcon from '@mui/icons-material/Add';
-import { selectBrands } from '../../brands/BrandSlice'
 import FormGroup from '@mui/material/FormGroup';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox';
@@ -23,6 +22,7 @@ import { resetCartItemAddStatus, selectCartItemAddStatus } from '../../cart/Cart
 import { motion } from 'framer-motion'
 import ClearIcon from '@mui/icons-material/Clear';
 import Lottie from 'lottie-react'
+import { getCategoryParentId, getCategoryTreeIds } from '../../categories/categoryUtils'
 
 
 export const ProductList = ({categoryId}) => {
@@ -37,7 +37,6 @@ export const ProductList = ({categoryId}) => {
     const is500=useMediaQuery(theme.breakpoints.down(500))
     const is488=useMediaQuery(theme.breakpoints.down(488))
 
-    const brands=useSelector(selectBrands)
     const categories=useSelector(selectCategories)
     const products=useSelector(selectProducts)
     const totalResults=useSelector(selectProductTotalResults)
@@ -57,21 +56,10 @@ export const ProductList = ({categoryId}) => {
 
     useEffect(()=>{
         if(categoryId){
-            setFilters({category:[categoryId]})
+            setFilters({category:getCategoryTreeIds(categoryId,categories)})
             setPage(1)
         }
-    },[categoryId])
-
-    const handleBrandFilters=(e)=>{
-
-        const filterSet=new Set(filters.brand)
-
-        if(e.target.checked){filterSet.add(e.target.value)}
-        else{filterSet.delete(e.target.value)}
-
-        const filterArray = Array.from(filterSet);
-        setFilters({...filters,brand:filterArray})
-    }
+    },[categoryId,categories])
 
     const handleCategoryFilters=(e)=>{
         const filterSet=new Set(filters.category)
@@ -201,42 +189,32 @@ export const ProductList = ({categoryId}) => {
                             </IconButton>
 
 
-                    {/* brand filters */}
-                    <Stack mt={2}>
-                        <Accordion>
-                            <AccordionSummary expandIcon={<AddIcon />}  aria-controls="brand-filters" id="brand-filters" >
-                                    <Typography>{'العلامة التجارية'}</Typography>
-                            </AccordionSummary>
-
-                            <AccordionDetails sx={{p:0}}>
-                                <FormGroup onChange={handleBrandFilters}>
-                                    {
-                                        brands?.map((brand)=>(
-                                            <motion.div style={{width:"fit-content"}} whileHover={{x:5}} whileTap={{scale:0.9}}>
-                                                <FormControlLabel sx={{ml:1}} control={<Checkbox whileHover={{scale:1.1}} />} label={brand.name} value={brand._id} />
-                                            </motion.div>
-                                        ))
-                                    }
-                                </FormGroup>
-                            </AccordionDetails>
-                        </Accordion>
-                    </Stack>
-
                     {/* category filters */}
                     <Stack mt={2}>
                         <Accordion>
-                            <AccordionSummary expandIcon={<AddIcon />}  aria-controls="brand-filters" id="brand-filters" >
+                            <AccordionSummary expandIcon={<AddIcon />} aria-controls="category-filters" id="category-filters">
                                     <Typography>{'الفئة'}</Typography>
                             </AccordionSummary>
 
                             <AccordionDetails sx={{p:0}}>
                                 <FormGroup onChange={handleCategoryFilters}>
                                     {
-                                        categories?.map((category)=>(
-                                            <motion.div style={{width:"fit-content"}} whileHover={{x:5}} whileTap={{scale:0.9}}>
-                                                <FormControlLabel sx={{ml:1}} control={<Checkbox whileHover={{scale:1.1}} />} label={category.name} value={category._id} />
+                                        categories?.map((category)=>{
+                                            const parentCategory=categories.find(
+                                                (item)=>String(item._id)===getCategoryParentId(category)
+                                            )
+
+                                            return (
+                                            <motion.div key={category._id} style={{width:"fit-content"}} whileHover={{x:5}} whileTap={{scale:0.9}}>
+                                                <FormControlLabel
+                                                    sx={{ml:1}}
+                                                    control={<Checkbox whileHover={{scale:1.1}} />}
+                                                    label={parentCategory?`${parentCategory.name} / ${category.name}`:category.name}
+                                                    value={category._id}
+                                                />
                                             </motion.div>
-                                        ))
+                                            )
+                                        })
                                     }
                                 </FormGroup>
                             </AccordionDetails>
@@ -264,7 +242,7 @@ export const ProductList = ({categoryId}) => {
                     >
                         {
                             products.map((product)=>(
-                                <ProductCard key={product._id} id={product._id} title={product.title} thumbnail={product.thumbnail} brand={product.brand.name} price={product.price} priceIsEstimate={product.priceIsEstimate} discountPercentage={product.discountPercentage} stockQuantity={product.stockQuantity} isUnlimitedStock={product.isUnlimitedStock} handleAddRemoveFromWishlist={handleAddRemoveFromWishlist} isGridCard />
+                                <ProductCard key={product._id} id={product._id} title={product.title} thumbnail={product.thumbnail} price={product.price} priceIsEstimate={product.priceIsEstimate} discountPercentage={product.discountPercentage} stockQuantity={product.stockQuantity} isUnlimitedStock={product.isUnlimitedStock} handleAddRemoveFromWishlist={handleAddRemoveFromWishlist} isGridCard />
                             ))
                         }
                     </Grid>

@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import { Box, useMediaQuery, useTheme } from '@mui/material'
 import { motion, useReducedMotion } from 'framer-motion'
 
@@ -8,23 +9,88 @@ export const WhatsAppFloatButton=()=>{
   const theme=useTheme()
   const isSmallScreen=useMediaQuery(theme.breakpoints.down('sm'))
   const prefersReducedMotion=useReducedMotion()
+  const buttonRef=useRef(null)
+  const dragState=useRef({ dragging:false, moved:false, offsetX:0, offsetY:0 })
+  const [position,setPosition]=useState({ x:0, y:0 })
+
+  useEffect(()=>{
+    const width=buttonRef.current?.offsetWidth || (isSmallScreen?120:164)
+    const height=buttonRef.current?.offsetHeight || 54
+    const nextX=Math.max(12, window.innerWidth - width - (isSmallScreen?20:28))
+    const nextY=Math.max(80, window.innerHeight - height - (isSmallScreen?110:110))
+    setPosition({ x: nextX, y: nextY })
+  },[isSmallScreen])
+
+  useEffect(()=>{
+    const handlePointerMove=(event)=>{
+      if(!dragState.current.dragging || !buttonRef.current) return
+
+      const nextX=Math.min(
+        Math.max(8, event.clientX - dragState.current.offsetX),
+        window.innerWidth - buttonRef.current.offsetWidth - 8
+      )
+      const nextY=Math.min(
+        Math.max(12, event.clientY - dragState.current.offsetY),
+        window.innerHeight - buttonRef.current.offsetHeight - 8
+      )
+
+      dragState.current.moved = true
+      setPosition({ x: nextX, y: nextY })
+    }
+
+    const stopDragging=()=>{
+      dragState.current.dragging=false
+    }
+
+    window.addEventListener('pointermove', handlePointerMove)
+    window.addEventListener('pointerup', stopDragging)
+    window.addEventListener('pointercancel', stopDragging)
+
+    return ()=>{
+      window.removeEventListener('pointermove', handlePointerMove)
+      window.removeEventListener('pointerup', stopDragging)
+      window.removeEventListener('pointercancel', stopDragging)
+    }
+  },[])
+
+  const handlePointerDown=(event)=>{
+    if(!buttonRef.current) return
+
+    const rect=buttonRef.current.getBoundingClientRect()
+    dragState.current.dragging=true
+    dragState.current.moved=false
+    dragState.current.offsetX=event.clientX - rect.left
+    dragState.current.offsetY=event.clientY - rect.top
+    event.preventDefault()
+  }
+
+  const handleClick=(event)=>{
+    if(dragState.current.moved){
+      event.preventDefault()
+      dragState.current.moved=false
+      return
+    }
+  }
 
   return (
     <Box
+      ref={buttonRef}
       component={motion.a}
       href={whatsappUrl}
       target="_blank"
       rel="noopener noreferrer"
       aria-label="تواصل معنا عبر واتساب"
       title="تواصل معنا عبر واتساب"
+      onPointerDown={handlePointerDown}
+      onClick={handleClick}
       whileHover={prefersReducedMotion?undefined:{scale:1.04}}
       whileTap={prefersReducedMotion?undefined:{scale:.96}}
       animate={prefersReducedMotion?undefined:{y:[0,-4,0]}}
       transition={prefersReducedMotion?undefined:{y:{duration:2.8,repeat:Infinity,ease:'easeInOut'}}}
       sx={{
         position:'fixed',
-        right:{xs:16,sm:24},
-        bottom:{xs:88,sm:72},
+        left:position.x,
+        top:position.y,
         zIndex:theme.zIndex.tooltip,
         display:'flex',
         alignItems:'center',
@@ -38,6 +104,10 @@ export const WhatsAppFloatButton=()=>{
         textDecoration:'none',
         boxShadow:'0 5px 20px rgba(0,0,0,.2)',
         WebkitTapHighlightColor:'transparent',
+        userSelect:'none',
+        touchAction:'none',
+        cursor:'grab',
+        '&:active':{cursor:'grabbing'},
         '&:focus-visible':{
           outline:'3px solid #128c7e',
           outlineOffset:3

@@ -134,7 +134,6 @@ export const Cart = ({ checkout, arabic: arabicOverride }) => {
                                     arabic={arabic}
                                     id={item._id}
                                     title={item.product.title}
-                                    brand={item.product.brand.name}
                                     category={item.product.category.name}
                                     price={item.product.price}
                                     quantity={item.quantity}

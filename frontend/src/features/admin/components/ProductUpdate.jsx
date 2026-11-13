@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { clearSelectedProduct, fetchProductByIdAsync,resetProductUpdateStatus, selectProductUpdateStatus, selectSelectedProduct, updateProductByIdAsync } from '../../products/ProductSlice'
 import { Button, Checkbox, FormControl, FormControlLabel, InputLabel, MenuItem, Select, Stack, TextField, Typography, useMediaQuery, useTheme, Box } from '@mui/material'
 import { uploadProductImage } from '../../products/ProductApi'
 import { useForm } from "react-hook-form"
-import { selectBrands } from '../../brands/BrandSlice'
 import { selectCategories } from '../../categories/CategoriesSlice'
+import { getCategoryParentId } from '../../categories/categoryUtils'
 import { toast } from 'react-toastify'
 import { FormCard } from '../../../components/FormCard'
 
@@ -17,10 +17,11 @@ export const ProductUpdate = () => {
     const {id}=useParams()
     const dispatch=useDispatch()
     const selectedProduct=useSelector(selectSelectedProduct)
-    const brands=useSelector(selectBrands)
     const categories=useSelector(selectCategories)
     const productUpdateStatus=useSelector(selectProductUpdateStatus)
     const navigate=useNavigate()
+    const location=useLocation()
+    const returnTo=location.state?.returnTo || '/admin/dashboard'
     const theme=useTheme()
     const is1100=useMediaQuery(theme.breakpoints.down(1100))
     const is480=useMediaQuery(theme.breakpoints.down(480))
@@ -35,9 +36,9 @@ export const ProductUpdate = () => {
     },[id])
 
     useEffect(()=>{
-        if(productUpdateStatus==='fullfilled'){
+        if(productUpdateStatus==='fulfilled'){
             toast.success("Product Updated")
-            navigate("/admin/dashboard")
+            navigate(returnTo)
         }
         else if(productUpdateStatus==='rejected'){
             toast.error("Error updating product, please try again later")
@@ -123,27 +124,21 @@ export const ProductUpdate = () => {
                 <Stack flexDirection={'row'} >
 
                     <FormControl fullWidth>
-                        <InputLabel id="brand-selection">{'Brand'}</InputLabel>
-                        <Select defaultValue={selectedProduct.brand._id} {...register("brand",{required:"Brand is required"})} labelId="brand-selection" label={'Brand'}>
-                            
-                            {
-                                brands.map((brand)=>(
-                                    <MenuItem value={brand._id}>{brand.name}</MenuItem>
-                                ))
-                            }
-
-                        </Select>
-                    </FormControl>
-
-
-                    <FormControl fullWidth>
                         <InputLabel id="category-selection">{'Category'}</InputLabel>
                         <Select defaultValue={selectedProduct.category._id} {...register("category",{required:"Category is required"})} labelId="category-selection" label={'Category'}>
                             
                             {
-                                categories.map((category)=>(
-                                    <MenuItem value={category._id}>{category.name}</MenuItem>
-                                ))
+                                categories.map((category)=>{
+                                    const parentCategory=categories.find(
+                                        (item)=>String(item._id)===getCategoryParentId(category)
+                                    )
+
+                                    return (
+                                        <MenuItem key={category._id} value={category._id}>
+                                            {parentCategory?`${parentCategory.name} / ${category.name}`:category.name}
+                                        </MenuItem>
+                                    )
+                                })
                             }
 
                         </Select>
@@ -204,7 +199,7 @@ export const ProductUpdate = () => {
             {/* action area */}
             <Stack flexDirection={'row'} alignSelf={'flex-end'} columnGap={is480?1:2}>
                 <Button size={is480?'medium':'large'} variant='contained' type='submit' disabled={Object.values(uploadingImages).some(Boolean)}>{'Update'}</Button>
-                <Button size={is480?'medium':'large'} variant='outlined' color='error' component={Link} to={'/admin/dashboard'}>{'Cancel'}</Button>
+                <Button size={is480?'medium':'large'} variant='outlined' color='error' component={Link} to={returnTo}>{'Cancel'}</Button>
             </Stack>
 
 

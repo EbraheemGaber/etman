@@ -2,8 +2,6 @@ import { axiosi } from "../../config/axios";
 import { fetchCachedGet } from "../../config/apiQuery";
 import { queryClient } from "../../config/queryClient";
 
-const getReferenceId=(value)=>typeof value==='object'&&value!==null?value._id:value
-
 export const addProduct=async(data)=>{
     try {
         const res=await axiosi.post('/products',data)
@@ -27,11 +25,13 @@ export const fetchProducts=async(filters)=>{
         const catalog=await fetchCachedGet(`/products${filters?.user?'?user=true':''}`)
         let products=catalog
 
-        if(filters?.brand?.length){
-            products=products.filter((product)=>filters.brand.includes(getReferenceId(product.brand)))
-        }
         if(filters?.category?.length){
-            products=products.filter((product)=>filters.category.includes(getReferenceId(product.category)))
+            products=products.filter((product)=>{
+                const categoryId=typeof product.category==='object'&&product.category!==null
+                    ? product.category._id
+                    : product.category
+                return filters.category.includes(categoryId)
+            })
         }
 
         const totalResults=products.length

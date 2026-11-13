@@ -1,5 +1,6 @@
 import {axiosi} from '../../config/axios'
 import {fetchCachedGet} from '../../config/apiQuery'
+import {invalidateApiQueries} from '../../config/queryClient'
 
 
 export const createOrder=async(order)=>{
@@ -34,6 +35,7 @@ export const getOrderStatistics=async()=>{
 export const updateOrderById=async(update)=>{
     try {
         const res=await axiosi.patch(`/orders/${update._id}`,update)
+        await invalidateApiQueries('orders')
         return res.data
     } catch (error) {
         throw error.response.data

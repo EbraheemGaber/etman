@@ -14,7 +14,7 @@ const formatPrice = (price, arabic = false) => new Intl.NumberFormat(
         : { minimumFractionDigits: 2, maximumFractionDigits: 2 }
 ).format(price)
 
-export const CartItem = ({ arabic = false, id, thumbnail, title, category, brand, price, quantity, stockQuantity, isUnlimitedStock, productId }) => {
+export const CartItem = ({ arabic = false, id, thumbnail, title, category, price, quantity, stockQuantity, isUnlimitedStock, productId }) => {
     const dispatch = useDispatch()
     const theme = useTheme()
     const isMobile = useMediaQuery(theme.breakpoints.down(600))
@@ -61,14 +61,6 @@ export const CartItem = ({ arabic = false, id, thumbnail, title, category, brand
             <Stack sx={{ flex: 1, minWidth: 0 }}>
                 <Stack direction="row" spacing={1} alignItems="flex-start" justifyContent="space-between">
                     <Stack sx={{ minWidth: 0 }}>
-                        {brand && (
-                            <Typography
-                                variant="caption"
-                                sx={{ alignSelf: 'flex-start', mb: 0.6, px: 0.8, py: 0.15, borderRadius: 0.6, backgroundColor: '#f0f1f4', color: '#3e434d', fontWeight: 700 }}
-                            >
-                                {brand}
-                            </Typography>
-                        )}
                         <Typography
                             component={Link}
                             to={`/product-details/${productId}`}

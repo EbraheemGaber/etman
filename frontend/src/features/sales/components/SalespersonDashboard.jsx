@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Alert, Box, Button, Card, CardContent, CircularProgress, LinearProgress, Stack, TextField, Typography } from '@mui/material'
 import { motion } from 'framer-motion'
 import { getMySalesRequests, getSalesStatistics, updateMonthlySalesTarget } from '../SalesApi'
@@ -72,6 +72,7 @@ export const SalespersonDashboard=()=>{
   const [message,setMessage]=useState('')
   const [targetDraft,setTargetDraft]=useState('10000')
   const [savingTarget,setSavingTarget]=useState(false)
+  const realtimeRequestsRef=useRef([])
 
   useEffect(()=>{
     let active=true
@@ -81,7 +82,9 @@ export const SalespersonDashboard=()=>{
     ])
       .then(([myRequests,myStatistics])=>{
         if(active){
-          setRequests(myRequests)
+          const resultIds=new Set(myRequests.map((request)=>String(request._id)))
+          const newestRequests=realtimeRequestsRef.current.filter((request)=>!resultIds.has(String(request._id)))
+          setRequests([...newestRequests,...myRequests])
           setStatistics(myStatistics)
           setTargetDraft(String(myStatistics.kpis?.monthlySalesTarget ?? 10000))
         }
@@ -93,6 +96,26 @@ export const SalespersonDashboard=()=>{
         if(active) setLoading(false)
       })
     return ()=>{active=false}
+  },[])
+
+  useEffect(()=>{
+    const handleRequestCreated=(event)=>{
+      const request=event.detail
+      if(!request?._id) return
+      realtimeRequestsRef.current=[
+        request,
+        ...realtimeRequestsRef.current.filter((existing)=>String(existing._id)!==String(request._id))
+      ]
+      setRequests((current)=>[
+        request,
+        ...current.filter((existing)=>String(existing._id)!==String(request._id))
+      ])
+    }
+
+    window.addEventListener('sales-request-created',handleRequestCreated)
+    return ()=>{
+      window.removeEventListener('sales-request-created',handleRequestCreated)
+    }
   },[])
 
   const saveTarget=async(event)=>{

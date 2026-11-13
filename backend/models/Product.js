@@ -29,8 +29,7 @@ const productSchema= new Schema({
     },
     brand:{
         type:Schema.Types.ObjectId,
-        ref:"Brand",
-        required:true
+        ref:"Brand"
     },
     stockQuantity:{
         type:Number,

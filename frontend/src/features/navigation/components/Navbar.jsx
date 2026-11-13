@@ -8,13 +8,14 @@ import Avatar from '@mui/material/Avatar'
 import Tooltip from '@mui/material/Tooltip'
 import MenuItem from '@mui/material/MenuItem'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Autocomplete, Badge, BottomNavigation, BottomNavigationAction, Box, Button, InputAdornment, Stack, TextField, useMediaQuery, useTheme } from '@mui/material'
+import { Autocomplete, Badge, BottomNavigation, BottomNavigationAction, Box, Button, CircularProgress, InputAdornment, Stack, TextField, useMediaQuery, useTheme } from '@mui/material'
 import { useDispatch, useSelector } from 'react-redux'
 import { selectUserInfo } from '../../user/UserSlice'
 import ShoppingCartOutlinedIcon from '@mui/icons-material/ShoppingCartOutlined'
 import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined'
 import PersonOutlineRoundedIcon from '@mui/icons-material/PersonOutlineRounded'
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded'
+import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded'
 import { selectCartItems } from '../../cart/CartSlice'
 import { selectLoggedInUser } from '../../auth/AuthSlice'
 import { selectWishlistItems } from '../../wishlist/WishlistSlice'
@@ -23,6 +24,8 @@ import TuneIcon from '@mui/icons-material/Tune'
 import { selectProductIsFilterOpen, toggleFilters } from '../../products/ProductSlice'
 import { selectCategories } from '../../categories/CategoriesSlice'
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined'
+import { fetchProducts } from '../../products/ProductApi'
+import { getRootCategories } from '../../categories/categoryUtils'
 
 const brandRed = '#c62828'
 
@@ -32,6 +35,7 @@ export const Navbar=({isProductList=false})=> {
   const cartItems=useSelector(selectCartItems)
   const loggedInUser=useSelector(selectLoggedInUser)
   const categories=useSelector(selectCategories)
+  const rootCategories=getRootCategories(categories)
   const navigate=useNavigate()
   const dispatch=useDispatch()
   const theme=useTheme()
@@ -44,6 +48,34 @@ export const Navbar=({isProductList=false})=> {
   const isAdmin=Boolean(loggedInUser?.isAdmin)
   const isSalesperson=Boolean(loggedInUser?.isSalesperson)
   const isMobileStorefront=isCustomer && isMobile
+  const [searchText,setSearchText]=React.useState('')
+  const [searchProducts,setSearchProducts]=React.useState([])
+  const [isLoadingSearchProducts,setIsLoadingSearchProducts]=React.useState(false)
+  const [searchProductsError,setSearchProductsError]=React.useState(false)
+  const searchRequestStarted=React.useRef(false)
+
+  React.useEffect(()=>{
+    if(searchText.trim().length<2 || searchRequestStarted.current) return
+
+    searchRequestStarted.current=true
+    setIsLoadingSearchProducts(true)
+    setSearchProductsError(false)
+    fetchProducts({user:true})
+      .then(({data})=>setSearchProducts(data))
+      .catch(()=>{
+        searchRequestStarted.current=false
+        setSearchProductsError(true)
+      })
+      .finally(()=>setIsLoadingSearchProducts(false))
+  },[searchText])
+
+  const matchingProducts=searchProducts
+    .filter((product)=>product.title?.toLowerCase().includes(searchText.trim().toLowerCase()))
+    .slice(0,8)
+  const searchOptions=[
+    ...matchingProducts.map((product)=>({type:'product',id:product._id,label:product.title})),
+    ...categories.map((category)=>({type:'category',id:category._id,label:category.name}))
+  ]
 
   const handleOpenUserMenu = (event) => {
     setAnchorElUser(event.currentTarget)
@@ -55,6 +87,15 @@ export const Navbar=({isProductList=false})=> {
 
   const handleToggleFilters=()=>{
     dispatch(toggleFilters())
+  }
+
+  const handleBack=()=>{
+    if(location.key==='default'){
+      navigate(isSalesperson?'/sales/request-order':isAdmin?'/admin/orders':'/',{replace:true})
+      return
+    }
+
+    navigate(-1)
   }
 
   const settings = loggedInUser ? [
@@ -89,6 +130,15 @@ export const Navbar=({isProductList=false})=> {
         justifyContent:"space-between"
       }}>
         <Stack direction="row" alignItems="center" spacing={{xs:.75,sm:1.5}} sx={{minWidth:0,flexShrink:0}}>
+          {location.pathname!=='/' && (
+            <IconButton
+              onClick={handleBack}
+              aria-label="Go back"
+              sx={{color:'inherit',p:.5}}
+            >
+              <ArrowBackRoundedIcon />
+            </IconButton>
+          )}
           <Typography
             variant="h6"
             noWrap
@@ -130,7 +180,8 @@ export const Navbar=({isProductList=false})=> {
             {[
               {name:'احصائيات',to:'/admin/statistics'},
               {name:'طلبات المندوبين',to:'/admin/sales-requests'},
-              {name:'طلبات العملاء',to:'/admin/orders'}
+              {name:'طلبات العملاء',to:'/admin/orders'},
+              {name:'الأرشيف',to:'/admin/archive'}
             ].map((item)=>(
               <Button
                 key={item.to}
@@ -178,19 +229,31 @@ export const Navbar=({isProductList=false})=> {
 
         {isCustomer && categories.length > 0 && (
           <Autocomplete
-            options={categories}
-            getOptionLabel={(category)=>category?.name || ''}
-            isOptionEqualToValue={(option,value)=>option._id===value._id}
-            onChange={(_,category)=>{
-              if(category) navigate(`/category/${category._id}`)
+            options={searchOptions}
+            loading={isLoadingSearchProducts}
+            groupBy={(option)=>option.type==='product'?'Products':'Categories'}
+            getOptionLabel={(option)=>option?.label || ''}
+            isOptionEqualToValue={(option,value)=>option.type===value.type && option.id===value.id}
+            onInputChange={(_,value)=>setSearchText(value)}
+            onChange={(_,option)=>{
+              if(option){
+                navigate(option.type==='product'?`/product-details/${option.id}`:`/category/${option.id}`)
+              }
             }}
             sx={{flex:1,maxWidth:560,minWidth:{xs:80,sm:170},mx:{xs:.25,sm:2}}}
+            noOptionsText={searchProductsError?'Unable to load product suggestions':'No matching products or categories'}
+            loadingText="Loading suggestions..."
+            renderOption={(props,option)=>(
+              <Box component="li" {...props} key={`${option.type}-${option.id}`}>
+                <Typography>{option.label}</Typography>
+              </Box>
+            )}
             renderInput={(params)=>(
               <TextField
                 {...params}
-                placeholder={"Search categories"}
+                placeholder={"Search products or categories"}
                 size="small"
-                inputProps={{...params.inputProps,'aria-label':'Search product categories'}}
+                inputProps={{...params.inputProps,'aria-label':'Search products or categories'}}
                 InputProps={{
                   ...params.InputProps,
                   startAdornment:(
@@ -199,6 +262,12 @@ export const Navbar=({isProductList=false})=> {
                         <SearchRoundedIcon fontSize="small" sx={{color:'#766666'}} />
                       </InputAdornment>
                       {params.InputProps.startAdornment}
+                    </>
+                  ),
+                  endAdornment:(
+                    <>
+                      {isLoadingSearchProducts && <CircularProgress color="inherit" size={16} />}
+                      {params.InputProps.endAdornment}
                     </>
                   )
                 }}
@@ -404,7 +473,7 @@ export const Navbar=({isProductList=false})=> {
             scrollbarWidth:'none',
             '&::-webkit-scrollbar':{display:'none'}
           }}>
-            {categories.map((category)=>(
+            {rootCategories.map((category)=>(
               <Typography
                 key={category._id}
                 component={Link}

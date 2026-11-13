@@ -21,7 +21,6 @@ export const ProductCard = ({
     price,
     discountPercentage=0,
     thumbnail,
-    brand,
     stockQuantity,
     isUnlimitedStock=false,
     handleAddRemoveFromWishlist,
@@ -169,9 +168,6 @@ export const ProductCard = ({
                         }}
                     >
                         {title}
-                    </Typography>
-                    <Typography sx={{mt:.2,color:'#8b8181',fontSize:11.5,fontWeight:600}}>
-                        {brand==='Etman Group'?'عتمان جروب':brand}
                     </Typography>
                 </Box>
 

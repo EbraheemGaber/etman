@@ -41,6 +41,8 @@ const formatCurrency=(value)=>`ج.م ${Number(value || 0).toLocaleString('ar-EG-
 
 const orderStatusLabels={
     Pending:'قيد الانتظار',
+    Approved:'تمت الموافقة',
+    Rejected:'مرفوض',
     Dispatched:'تم الشحن',
     'Out for delivery':'قيد التوصيل',
     Delivered:'تم التوصيل',
@@ -254,9 +256,6 @@ export const UserOrders = () => {
                                                                                 />
                                                                                 <Stack flex={1} spacing={0.25}>
                                                                                     <Typography variant="body2" fontWeight={600}>{product.title || 'المنتج'}</Typography>
-                                                                                    {product.brand?.name && (
-                                                                                        <Typography variant="caption" color="text.secondary">{product.brand.name}</Typography>
-                                                                                    )}
                                                                                     <Typography variant="caption" color="text.secondary">
                                                                                         الكمية: {entry.quantity} · {formatCurrency(product.price)} للقطعة
                                                                                     </Typography>

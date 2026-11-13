@@ -5,7 +5,6 @@ import { fetchAddressByUserIdAsync } from '../../features/address/AddressSlice'
 import { fetchWishlistByUserIdAsync } from '../../features/wishlist/WishlistSlice'
 import { fetchCartByUserIdAsync } from '../../features/cart/CartSlice'
 import { fetchAllCategoriesAsync } from '../../features/categories/CategoriesSlice'
-import { fetchAllBrandsAsync } from '../../features/brands/BrandSlice'
 import { fetchLoggedInUserByIdAsync } from '../../features/user/UserSlice'
 
 export const useFetchLoggedInUserDetails = (deps) => {
@@ -18,7 +17,6 @@ export const useFetchLoggedInUserDetails = (deps) => {
         as while login and signup only the bare-minimum information is sent by the server */
         if(deps && loggedInUser?.isVerified){
           dispatch(fetchLoggedInUserByIdAsync(loggedInUser?._id))
-          dispatch(fetchAllBrandsAsync())
           dispatch(fetchAllCategoriesAsync())
     
           if(!loggedInUser.isAdmin){

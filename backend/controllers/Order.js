@@ -5,6 +5,10 @@ exports.create=async(req,res)=>{
         const {item,address,paymentMode,total}=req.body
         const created=new Order({user:req.user._id,item,address,paymentMode,total})
         await created.save()
+        req.app.get('io')
+            .to('admins')
+            .to(`user:${req.user._id}`)
+            .emit('order:created',{order:created.toObject()})
         res.status(201).json(created)
     } catch (error) {
         console.log(error);
@@ -71,7 +75,7 @@ exports.getStatistics = async (req, res) => {
                         revenue: {
                             $sum: {
                                 $cond: [
-                                    { $ne: ["$status", "Cancelled"] },
+                                    { $nin: ["$status", ["Cancelled", "Rejected"]] },
                                     { $ifNull: ["$total", 0] },
                                     0
                                 ]
@@ -82,7 +86,7 @@ exports.getStatistics = async (req, res) => {
                 { $sort: { _id: 1 } }
             ]),
             Order.aggregate([
-                { $match: { status: { $ne: "Cancelled" } } },
+                { $match: { status: { $nin: ["Cancelled", "Rejected"] } } },
                 { $unwind: "$item" },
                 { $match: { "item.product.title": { $exists: true, $ne: null } } },
                 {

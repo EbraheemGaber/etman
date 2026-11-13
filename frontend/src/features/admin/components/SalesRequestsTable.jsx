@@ -56,7 +56,7 @@ export const SalesRequestsTable=({
 
   return (
     <TableContainer component={Paper} elevation={1} sx={{borderRadius:2,overflowX:'auto'}}>
-      <Table size="small" sx={{minWidth:1050}} aria-label={isArabic?'طلبات المبيعات':'Sales order requests'}>
+      <Table size="small" dir={isArabic?'rtl':'ltr'} sx={{minWidth:1050}} aria-label={isArabic?'طلبات المبيعات':'Sales order requests'}>
         <TableHead>
           <TableRow sx={{'& th':{color:'text.secondary',fontWeight:600,whiteSpace:'nowrap',borderBottom:'1px solid #e0e0e0'}}}>
             <TableCell padding="checkbox" />
@@ -110,7 +110,7 @@ export const SalesRequestsTable=({
                       <Typography variant="body2">{request.salesperson?.name || request.salesperson?.email || (isArabic?'غير معروف':'Unknown')}</Typography>
                     </TableCell>
                   )}
-                  <TableCell sx={{whiteSpace:'nowrap'}}>{isArabic?`${items.length} عنصر`: `${items.length} ${items.length===1?'item':'items'}`}</TableCell>
+                  <TableCell sx={{whiteSpace:'nowrap'}}>{isArabic?`${items.length} ${items.length===1?'منتج':'منتجات'}`: `${items.length} ${items.length===1?'item':'items'}`}</TableCell>
                   <TableCell align="right" sx={{whiteSpace:'nowrap',fontWeight:600}}>
                     {formatCurrency(request.total,locale)}
                   </TableCell>

@@ -19,10 +19,12 @@ import { SalespersonPage } from './pages/SalespersonPage';
 import { SalespersonOrderRequestPage } from './pages/SalespersonOrderRequestPage';
 import { AdminSalesRequestsPage } from './pages/AdminSalesRequestsPage';
 import { AdminSalespeoplePage } from './pages/AdminSalespeoplePage';
+import { AdminArchivePage } from './pages/AdminArchivePage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { WhatsAppFloatButton } from './components/WhatsAppFloatButton';
 import { queryClient } from './config/queryClient';
 import { Footer } from './features/footer/Footer';
+import { RealtimeOrderEvents } from './features/realtime/RealtimeOrderEvents';
 
 function AppLayout() {
   const location = useLocation();
@@ -42,6 +44,7 @@ function AppLayout() {
     <Box sx={{minHeight:'100vh',display:'flex',flexDirection:'column'}}>
       <Box component="main" sx={{flex:'1 0 auto',display:'flex',flexDirection:'column'}}>
         <Outlet />
+        <RealtimeOrderEvents />
       </Box>
       {!isAuthPage && !isOrderSuccessPage && !isOrdersPage && !isCartPage && !isCheckoutPage && !isProductDetailsPage && <Footer/>}
       {isAuthChecked && !isAuthPage && !isAdmin && !isSalesperson && <WhatsAppFloatButton/>}
@@ -81,6 +84,7 @@ function App() {
             <Route path='/admin/product-update/:id' element={<Protected><ProductUpdatePage/></Protected>}/>
             <Route path='/admin/add-product' element={<Protected><AddProductPage/></Protected>}/>
             <Route path='/admin/orders'  element={<Protected><AdminOrdersPage/></Protected>}/>
+            <Route path='/admin/archive' element={<Protected><AdminArchivePage/></Protected>}/>
             <Route path='/admin/statistics' element={<Protected><AdminStatisticsPage/></Protected>}/>
             <Route path='/admin/sales-requests' element={<Protected><AdminSalesRequestsPage/></Protected>}/>
             <Route path='/admin/salespeople' element={<Protected><AdminSalespeoplePage/></Protected>}/>

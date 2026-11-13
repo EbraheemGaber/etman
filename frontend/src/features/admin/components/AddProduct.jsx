@@ -4,8 +4,8 @@ import { Link, useNavigate} from 'react-router-dom'
 import { addProductAsync, resetProductAddStatus, selectProductAddStatus,updateProductByIdAsync } from '../../products/ProductSlice'
 import { Button, Checkbox, FormControl, FormControlLabel, InputLabel, MenuItem, Select, Stack, TextField, Typography, useMediaQuery, useTheme } from '@mui/material'
 import { useForm } from "react-hook-form"
-import { selectBrands } from '../../brands/BrandSlice'
 import { selectCategories } from '../../categories/CategoriesSlice'
+import { getCategoryParentId } from '../../categories/categoryUtils'
 import { toast } from 'react-toastify'
 import { FormCard } from '../../../components/FormCard'
 
@@ -14,7 +14,6 @@ export const AddProduct = () => {
     const {register,handleSubmit,reset,formState: { errors }} = useForm()
 
     const dispatch=useDispatch()
-    const brands=useSelector(selectBrands)
     const categories=useSelector(selectCategories)
     const productAddStatus=useSelector(selectProductAddStatus)
     const navigate=useNavigate()
@@ -66,27 +65,21 @@ export const AddProduct = () => {
                 <Stack flexDirection={'row'} >
 
                     <FormControl fullWidth>
-                        <InputLabel id="brand-selection">{'Brand'}</InputLabel>
-                        <Select {...register("brand",{required:"Brand is required"})} labelId="brand-selection" label={'Brand'}>
-                            
-                            {
-                                brands.map((brand)=>(
-                                    <MenuItem value={brand._id}>{brand.name}</MenuItem>
-                                ))
-                            }
-
-                        </Select>
-                    </FormControl>
-
-
-                    <FormControl fullWidth>
                         <InputLabel id="category-selection">{'Category'}</InputLabel>
                         <Select {...register("category",{required:"Category is required"})} labelId="category-selection" label={'Category'}>
                             
                             {
-                                categories.map((category)=>(
-                                    <MenuItem value={category._id}>{category.name}</MenuItem>
-                                ))
+                                categories.map((category)=>{
+                                    const parentCategory=categories.find(
+                                        (item)=>String(item._id)===getCategoryParentId(category)
+                                    )
+
+                                    return (
+                                        <MenuItem key={category._id} value={category._id}>
+                                            {parentCategory?`${parentCategory.name} / ${category.name}`:category.name}
+                                        </MenuItem>
+                                    )
+                                })
                             }
 
                         </Select>

@@ -9,8 +9,14 @@ const salesRequestSchema=new Schema({
     },
     customer:{
         name:{type:String,required:true,trim:true},
-        email:{type:String,required:true,trim:true,lowercase:true},
-        phone:{type:String,required:true,trim:true}
+        email:{type:String,trim:true,lowercase:true},
+        phone:{type:String,required:true,trim:true},
+        alternatePhone:{type:String,trim:true},
+        addressDetails:{type:String,trim:true},
+        region:{type:String,trim:true},
+        governorate:{type:String,trim:true},
+        customerType:{type:String,trim:true},
+        classification:{type:String,trim:true}
     },
     items:{
         type:[Schema.Types.Mixed],

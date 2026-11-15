@@ -58,12 +58,22 @@ exports.getSalespeople=async(req,res)=>{
 
 exports.searchCustomers=async(req,res)=>{
     try {
+        const searchTerm=typeof req.query.search==="string"?req.query.search.trim().slice(0,100):""
+        if(!searchTerm){
+            return res.status(200).json([])
+        }
+        const escapedSearch=searchTerm.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")
+        const namePattern=new RegExp(escapedSearch,"i")
         const [users,contacts]=await Promise.all([
             User.find({
                 isAdmin:{$ne:true},
-                isSalesperson:{$ne:true}
-            }).select("_id name email").sort({name:1}),
-            CustomerContact.find().select("_id name email phone").sort({name:1})
+                isSalesperson:{$ne:true},
+                name:namePattern
+            }).select("_id name email").sort({name:1}).limit(25),
+            CustomerContact.find({name:namePattern})
+                .select("_id name email phone alternatePhone addressDetails region governorate customerType classification")
+                .sort({name:1})
+                .limit(25)
         ])
 
         const addresses=users.length
@@ -74,7 +84,7 @@ exports.searchCustomers=async(req,res)=>{
 
         for(const user of users){
             const email=user.email.trim().toLowerCase()
-            customersByEmail.set(email,{
+            customersByEmail.set(`email:${email}`,{
                 _id:user._id,
                 name:user.name,
                 email:user.email,
@@ -83,18 +93,29 @@ exports.searchCustomers=async(req,res)=>{
         }
 
         for(const contact of contacts){
-            const email=contact.email.trim().toLowerCase()
-            if(!customersByEmail.has(email)){
-                customersByEmail.set(email,{
+            const email=typeof contact.email==="string"?contact.email.trim().toLowerCase():""
+            const key=email?`email:${email}`:`contact:${String(contact._id)}`
+            if(!customersByEmail.has(key)){
+                customersByEmail.set(key,{
                     _id:contact._id,
                     name:contact.name,
-                    email:contact.email,
-                    phone:contact.phone
+                    email,
+                    phone:contact.phone || contact.alternatePhone || "",
+                    alternatePhone:contact.alternatePhone || "",
+                    addressDetails:contact.addressDetails || "",
+                    region:contact.region || "",
+                    governorate:contact.governorate || "",
+                    customerType:contact.customerType || "",
+                    classification:contact.classification || ""
                 })
             }
         }
 
-        res.status(200).json([...customersByEmail.values()].sort((first,second)=>first.name.localeCompare(second.name)))
+        res.status(200).json(
+            [...customersByEmail.values()]
+                .sort((first,second)=>first.name.localeCompare(second.name))
+                .slice(0,25)
+        )
     } catch(error) {
         console.log(error)
         res.status(500).json({message:"Error fetching customers"})
@@ -106,13 +127,27 @@ exports.createCustomer=async(req,res)=>{
         const name=typeof req.body.name==="string"?req.body.name.trim():""
         const email=typeof req.body.email==="string"?req.body.email.trim().toLowerCase():""
         const phone=typeof req.body.phone==="string"?req.body.phone.trim():""
-        if(!name || !phone || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
-            return res.status(400).json({message:"Enter a valid customer name, email, and phone"})
+        const alternatePhone=typeof req.body.alternatePhone==="string"?req.body.alternatePhone.trim():""
+        const addressDetails=typeof req.body.addressDetails==="string"?req.body.addressDetails.trim():""
+        const region=typeof req.body.region==="string"?req.body.region.trim():""
+        const governorate=typeof req.body.governorate==="string"?req.body.governorate.trim():""
+        const customerType=typeof req.body.customerType==="string"?req.body.customerType.trim():""
+        const classification=typeof req.body.classification==="string"?req.body.classification.trim():""
+        if(!name || !phone || (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))){
+            return res.status(400).json({message:"Enter a valid customer name and phone, with a valid email if provided"})
         }
 
-        const escapedEmail=email.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")
-        const existingAccount=await User.findOne({email:new RegExp(`^${escapedEmail}$`,"i")}).select("_id")
-        const existingContact=await CustomerContact.findOne({email}).select("_id")
+        let existingAccount=null
+        let existingContact=null
+        if(email){
+            const escapedEmail=email.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")
+            const existingCustomers=await Promise.all([
+                User.findOne({email:new RegExp(`^${escapedEmail}$`,"i")}).select("_id"),
+                CustomerContact.findOne({email}).select("_id")
+            ])
+            existingAccount=existingCustomers[0]
+            existingContact=existingCustomers[1]
+        }
         if(existingAccount || existingContact){
             return res.status(409).json({message:"A customer with this email already exists. Select them from Current customer."})
         }
@@ -121,13 +156,25 @@ exports.createCustomer=async(req,res)=>{
             createdBy:req.user._id,
             name,
             email,
-            phone
+            phone,
+            alternatePhone,
+            addressDetails,
+            region,
+            governorate,
+            customerType,
+            classification
         })
         res.status(201).json({
             _id:created._id,
             name:created.name,
             email:created.email,
-            phone:created.phone
+            phone:created.phone,
+            alternatePhone:created.alternatePhone || "",
+            addressDetails:created.addressDetails || "",
+            region:created.region || "",
+            governorate:created.governorate || "",
+            customerType:created.customerType || "",
+            classification:created.classification || ""
         })
     } catch(error) {
         console.log(error)

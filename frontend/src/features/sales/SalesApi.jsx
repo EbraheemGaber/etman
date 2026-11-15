@@ -45,9 +45,10 @@ export const logCustomerVisit=async(customer)=>{
   }
 }
 
-export const getCustomers=async()=>{
+export const getCustomers=async(search,signal)=>{
   try{
-    return await fetchCachedGet('/users/customers')
+    const response=await axiosi.get('/users/customers',{params:{search},signal})
+    return response.data
   }catch(error){
     throw error.response?.data || error
   }

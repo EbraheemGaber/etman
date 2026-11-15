@@ -19,7 +19,6 @@ const salesActivitySchema=new Schema({
     },
     customerEmail:{
         type:String,
-        required:true,
         trim:true,
         lowercase:true
     }

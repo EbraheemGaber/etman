@@ -80,7 +80,9 @@ export const ProductCard = ({
                 width:isGridCard?{xs:'100%',sm:264}:250,
                 minWidth:isGridCard?0:undefined,
                 flex:isGridCard?{xs:'auto',sm:'0 0 264px'}:'0 0 250px',
-                height:isGridCard?405:375,
+                height:isGridCard
+                    ?isAdminCard?405:360
+                    :isAdminCard?375:isWishlistCard?285:330,
                 p:{xs:1.15,sm:1.4},
                 borderColor:'rgba(198,40,40,.16)',
                 borderRadius:3.5,
@@ -142,8 +144,8 @@ export const ProductCard = ({
                     alt={title}
                     loading="lazy"
                     sx={{
-                        width:'88%',
-                        height:'88%',
+                        width:'100%',
+                        height:'100%',
                         objectFit:'contain',
                         mixBlendMode:'multiply',
                         transition:'transform 300ms ease'
@@ -171,27 +173,29 @@ export const ProductCard = ({
                     </Typography>
                 </Box>
 
-                <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{minHeight:44}}>
-                    <Stack spacing={.35} alignItems="flex-start">
-                        <Typography sx={{color:'#7a6d6c',fontSize:10.5,fontWeight:600}}>
-                            {'السعر'}
-                        </Typography>
-                        <Typography component="span" dir="ltr" sx={{color:'#c62828',fontSize:17,fontWeight:900,lineHeight:1.2}}>
-                            {formatPrice(discountedPrice)} <Box component="span" sx={{fontSize:11,fontWeight:700}}>{'ج.م'}</Box>
-                        </Typography>
+                {isAdminCard && (
+                    <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{minHeight:44}}>
+                        <Stack spacing={.35} alignItems="flex-start">
+                            <Typography sx={{color:'#7a6d6c',fontSize:10.5,fontWeight:600}}>
+                                {'السعر'}
+                            </Typography>
+                            <Typography component="span" dir="ltr" sx={{color:'#c62828',fontSize:17,fontWeight:900,lineHeight:1.2}}>
+                                {formatPrice(discountedPrice)} <Box component="span" sx={{fontSize:11,fontWeight:700}}>{'ج.م'}</Box>
+                            </Typography>
+                        </Stack>
+                        <Chip
+                            label={isAvailable?'متوفر':'غير متوفر'}
+                            size="small"
+                            sx={{
+                                height:25,
+                                bgcolor:isAvailable?'#edf5ef':'#fff0ef',
+                                color:isAvailable?'#2f6d43':'#a32e32',
+                                fontSize:11,
+                                fontWeight:800
+                            }}
+                        />
                     </Stack>
-                    <Chip
-                        label={isAvailable?'متوفر':'غير متوفر'}
-                        size="small"
-                        sx={{
-                            height:25,
-                            bgcolor:isAvailable?'#edf5ef':'#fff0ef',
-                            color:isAvailable?'#2f6d43':'#a32e32',
-                            fontSize:11,
-                            fontWeight:800
-                        }}
-                    />
-                </Stack>
+                )}
 
                 {!isWishlistCard && !isAdminCard && (
                     <LoadingButton

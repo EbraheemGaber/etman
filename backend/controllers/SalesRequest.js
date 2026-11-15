@@ -11,8 +11,9 @@ exports.create=async(req,res)=>{
         const customerName=typeof customer?.name==="string"?customer.name.trim():""
         const customerEmail=typeof customer?.email==="string"?customer.email.trim().toLowerCase():""
         const customerPhone=typeof customer?.phone==="string"?customer.phone.trim():""
-        if(!customerName || !customerPhone || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)){
-            return res.status(400).json({message:"Enter a valid customer name, email, and phone"})
+        const optionalCustomerField=(field)=>typeof customer?.[field]==="string"?customer[field].trim():""
+        if(!customerName || !customerPhone || (customerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail))){
+            return res.status(400).json({message:"Enter a valid customer name and phone, with a valid email if provided"})
         }
         if(!Array.isArray(items) || !items.length){
             return res.status(400).json({message:"Add at least one product to the request"})
@@ -59,7 +60,13 @@ exports.create=async(req,res)=>{
             customer:{
                 name:customerName,
                 email:customerEmail,
-                phone:customerPhone
+                phone:customerPhone,
+                alternatePhone:optionalCustomerField("alternatePhone"),
+                addressDetails:optionalCustomerField("addressDetails"),
+                region:optionalCustomerField("region"),
+                governorate:optionalCustomerField("governorate"),
+                customerType:optionalCustomerField("customerType"),
+                classification:optionalCustomerField("classification")
             },
             items:requestItems,
             total
@@ -228,8 +235,8 @@ exports.logCustomerVisit=async(req,res)=>{
     try {
         const customerName=typeof req.body.customerName==="string"?req.body.customerName.trim():""
         const customerEmail=typeof req.body.customerEmail==="string"?req.body.customerEmail.trim().toLowerCase():""
-        if(!customerName || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)){
-            return res.status(400).json({message:"Select a customer with a valid name and email before logging a visit"})
+        if(!customerName || (customerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail))){
+            return res.status(400).json({message:"Select a customer with a valid name before logging a visit"})
         }
 
         const activity=await SalesActivity.create({

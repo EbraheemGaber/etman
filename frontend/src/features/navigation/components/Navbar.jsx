@@ -24,8 +24,12 @@ import TuneIcon from '@mui/icons-material/Tune'
 import { selectProductIsFilterOpen, toggleFilters } from '../../products/ProductSlice'
 import { selectCategories } from '../../categories/CategoriesSlice'
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined'
+import CategoryOutlinedIcon from '@mui/icons-material/CategoryOutlined'
+import ExpandLessIcon from '@mui/icons-material/ExpandLess'
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import ShoppingBagOutlinedIcon from '@mui/icons-material/ShoppingBagOutlined'
 import { fetchProducts } from '../../products/ProductApi'
-import { getRootCategories } from '../../categories/categoryUtils'
+import { getCategoryTreeIds, getRootCategories } from '../../categories/categoryUtils'
 
 const brandRed = '#c62828'
 
@@ -49,14 +53,15 @@ export const Navbar=({isProductList=false})=> {
   const isSalesperson=Boolean(loggedInUser?.isSalesperson)
   const isMobileStorefront=isCustomer && isMobile
   const [searchText,setSearchText]=React.useState('')
+  const [expandedSearchCategoryId,setExpandedSearchCategoryId]=React.useState(null)
+  const [isSearchOpen,setIsSearchOpen]=React.useState(false)
   const [searchProducts,setSearchProducts]=React.useState([])
   const [isLoadingSearchProducts,setIsLoadingSearchProducts]=React.useState(false)
   const [searchProductsError,setSearchProductsError]=React.useState(false)
   const searchRequestStarted=React.useRef(false)
 
-  React.useEffect(()=>{
-    if(searchText.trim().length<2 || searchRequestStarted.current) return
-
+  const loadSearchProducts=React.useCallback(()=>{
+    if(searchRequestStarted.current) return
     searchRequestStarted.current=true
     setIsLoadingSearchProducts(true)
     setSearchProductsError(false)
@@ -67,14 +72,48 @@ export const Navbar=({isProductList=false})=> {
         setSearchProductsError(true)
       })
       .finally(()=>setIsLoadingSearchProducts(false))
-  },[searchText])
+  },[])
 
-  const matchingProducts=searchProducts
-    .filter((product)=>product.title?.toLowerCase().includes(searchText.trim().toLowerCase()))
-    .slice(0,8)
+  React.useEffect(()=>{
+    if(searchText.trim().length>=2) loadSearchProducts()
+  },[loadSearchProducts,searchText])
+
+  const matchingProducts=searchText.trim().length>=2
+    ?searchProducts
+      .filter((product)=>product.title?.toLowerCase().includes(searchText.trim().toLowerCase()))
+      .slice(0,8)
+    :[]
+  const expandedSearchCategory=categories.find((category)=>category._id===expandedSearchCategoryId)
+  const expandedCategoryIds=expandedSearchCategory
+    ?getCategoryTreeIds(expandedSearchCategory._id,categories).map(String)
+    :[]
+  const expandedCategoryProducts=searchProducts.filter((product)=>{
+    const productCategory=typeof product.category==='object' && product.category!==null
+      ?product.category._id || product.category.id
+      :product.category
+    return expandedCategoryIds.includes(String(productCategory))
+  })
+  const expandedCategoryProductIds=new Set(expandedCategoryProducts.map((product)=>product._id))
   const searchOptions=[
-    ...matchingProducts.map((product)=>({type:'product',id:product._id,label:product.title})),
-    ...categories.map((category)=>({type:'category',id:category._id,label:category.name}))
+    ...matchingProducts
+      .filter((product)=>!expandedCategoryProductIds.has(product._id))
+      .map((product)=>({
+        type:'product',
+        id:product._id,
+        label:product.title,
+        thumbnail:product.thumbnail
+      })),
+    ...categories.flatMap((category)=>[
+      {type:'category',id:category._id,label:category.name},
+      ...(category._id===expandedSearchCategoryId
+        ?expandedCategoryProducts.map((product)=>({
+          type:'categoryProduct',
+          id:product._id,
+          label:product.title,
+          thumbnail:product.thumbnail
+        }))
+        :[])
+    ])
   ]
 
   const handleOpenUserMenu = (event) => {
@@ -231,21 +270,87 @@ export const Navbar=({isProductList=false})=> {
           <Autocomplete
             options={searchOptions}
             loading={isLoadingSearchProducts}
+            open={isSearchOpen}
+            onOpen={()=>setIsSearchOpen(true)}
+            onClose={(_,reason)=>{
+              if(reason!=='selectOption') setIsSearchOpen(false)
+            }}
+            value={null}
             groupBy={(option)=>option.type==='product'?'Products':'Categories'}
             getOptionLabel={(option)=>option?.label || ''}
             isOptionEqualToValue={(option,value)=>option.type===value.type && option.id===value.id}
-            onInputChange={(_,value)=>setSearchText(value)}
+            filterOptions={(options,{inputValue})=>options.filter((option)=>(
+              option.type==='categoryProduct' ||
+              option.label?.toLowerCase().includes(inputValue.trim().toLowerCase())
+            ))}
+            onInputChange={(_,value,reason)=>{
+              setSearchText(value)
+              if(reason==='input') setExpandedSearchCategoryId(null)
+            }}
             onChange={(_,option)=>{
               if(option){
-                navigate(option.type==='product'?`/product-details/${option.id}`:`/category/${option.id}`)
+                if(option.type==='category'){
+                  setExpandedSearchCategoryId((current)=>current===option.id?null:option.id)
+                  setIsSearchOpen(true)
+                  loadSearchProducts()
+                  return
+                }
+                setIsSearchOpen(false)
+                navigate(`/product-details/${option.id}`)
               }
             }}
             sx={{flex:1,maxWidth:560,minWidth:{xs:80,sm:170},mx:{xs:.25,sm:2}}}
             noOptionsText={searchProductsError?'Unable to load product suggestions':'No matching products or categories'}
             loadingText="Loading suggestions..."
             renderOption={(props,option)=>(
-              <Box component="li" {...props} key={`${option.type}-${option.id}`}>
+              <Box
+                component="li"
+                {...props}
+                key={`${option.type}-${option.id}`}
+                sx={{
+                  ...(option.type==='categoryProduct'?{pl:4}:{}),
+                  ...(option.type==='category'?{cursor:'pointer'}:{})
+                }}
+              >
+                {option.type==='category' && <CategoryOutlinedIcon fontSize="small" sx={{mr:1,color:brandRed}} />}
+                {option.type!=='category' && (
+                  option.thumbnail ? (
+                    <Box
+                      component="img"
+                      src={option.thumbnail}
+                      alt=""
+                      loading="lazy"
+                      sx={{
+                        width:28,
+                        height:28,
+                        mr:1,
+                        objectFit:'contain',
+                        borderRadius:1,
+                        bgcolor:'#fff7f7'
+                      }}
+                    />
+                  ) : (
+                    <ShoppingBagOutlinedIcon fontSize="small" sx={{mr:1,color:'#8b7777'}} />
+                  )
+                )}
                 <Typography>{option.label}</Typography>
+                {option.type==='category' && expandedSearchCategoryId===option.id && (
+                  <Box
+                    component="span"
+                    sx={{ml:'auto',color:'text.secondary',fontSize:11}}
+                  >
+                    {searchProductsError
+                      ?'Unable to load products'
+                      :isLoadingSearchProducts
+                        ?'Loading…'
+                        :`${expandedCategoryProducts.length} products`}
+                  </Box>
+                )}
+                {option.type==='category' && (
+                  expandedSearchCategoryId===option.id
+                    ?<ExpandLessIcon fontSize="small" sx={{ml:1}} />
+                    :<ExpandMoreIcon fontSize="small" sx={{ml:1}} />
+                )}
               </Box>
             )}
             renderInput={(params)=>(

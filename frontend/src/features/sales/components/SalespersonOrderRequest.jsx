@@ -14,17 +14,17 @@ import PlayArrowRoundedIcon from '@mui/icons-material/PlayArrowRounded'
 
 const errorTranslations={
   'Choose a product and enter a whole-number quantity greater than zero.':'اختر منتجًا وأدخل كمية صحيحة أكبر من صفر.',
-  'Select a customer with a name, email, and phone number before continuing.':'اختر عميلًا لديه اسم وبريد إلكتروني ورقم هاتف قبل المتابعة.',
-  'Enter the new customer’s name, email, and phone number.':'أدخل اسم العميل الجديد وبريده الإلكتروني ورقم هاتفه.',
+  'Select a customer with a name and phone number before continuing.':'اختر عميلًا لديه اسم ورقم هاتف قبل المتابعة.',
+  'Enter the new customer’s name and phone number.':'أدخل اسم العميل الجديد ورقم هاتفه.',
   'Enter the customer details and add at least one product.':'أدخل بيانات العميل وأضف منتجًا واحدًا على الأقل.',
-  'Enter a valid customer name, email, and phone':'أدخل اسم العميل وبريده الإلكتروني ورقم هاتفه بشكل صحيح.',
+  'Enter a valid customer name and phone, with a valid email if provided':'أدخل اسم العميل ورقم هاتفه بشكل صحيح، مع بريد إلكتروني صالح إذا تم إدخاله.',
   'Add at least one product to the request':'أضف منتجًا واحدًا على الأقل إلى الطلب.',
   'Each item must contain a product and quantity':'يجب تحديد المنتج والكمية لكل عنصر.',
   'Each item must have a valid product and a positive whole-number quantity':'يجب أن يحتوي كل عنصر على منتج صالح وكمية صحيحة أكبر من صفر.',
   'One or more selected products are unavailable':'منتج واحد أو أكثر من المنتجات المختارة غير متاح.',
   'Requested quantities cannot exceed available stock':'لا يمكن أن تتجاوز الكمية المطلوبة المخزون المتاح.',
   'Error creating the sales request':'تعذر إنشاء طلب المبيعات.',
-  'Select a customer with a valid name and email before logging a visit':'اختر عميلًا لديه اسم وبريد إلكتروني صالحان قبل تسجيل الزيارة.',
+  'Select a customer with a valid name before logging a visit':'اختر عميلًا لديه اسم صالح قبل تسجيل الزيارة.',
   'Error logging customer visit':'تعذر تسجيل زيارة العميل.',
   'Error fetching customers':'تعذر تحميل قائمة العملاء.',
   'Error fetching products, please try again later':'تعذر تحميل المنتجات. يرجى المحاولة لاحقًا.',
@@ -40,14 +40,39 @@ const errorMessage=(error)=>{
   return errorTranslations[message] || 'حدث خطأ. يرجى التحقق من البيانات والمحاولة مرة أخرى.'
 }
 const numberFormat=(value)=>Number(value || 0).toLocaleString('ar-EG-u-nu-latn',{maximumFractionDigits:2})
+const emptyCustomer=()=>({
+  name:'',
+  email:'',
+  phone:'',
+  alternatePhone:'',
+  addressDetails:'',
+  region:'',
+  governorate:'',
+  customerType:'',
+  classification:''
+})
+const customerFieldProps=(readOnly,sx={})=>({
+  InputProps:{readOnly},
+  sx:{
+    ...sx,
+    ...(readOnly?{
+      '& .MuiOutlinedInput-root':{
+        backgroundColor:'action.disabledBackground'
+      }
+    }:{})
+  }
+})
 
 export const SalespersonOrderRequest=()=>{
   const [products,setProducts]=useState([])
   const [customers,setCustomers]=useState([])
   const [customerType,setCustomerType]=useState('existing')
   const [step,setStep]=useState(0)
-  const [selectedCustomerId,setSelectedCustomerId]=useState('')
-  const [customer,setCustomer]=useState({name:'',email:'',phone:''})
+  const [selectedCustomer,setSelectedCustomer]=useState(null)
+  const [customerSearchInput,setCustomerSearchInput]=useState('')
+  const [customerSearchTerm,setCustomerSearchTerm]=useState('')
+  const [customerSearchLoading,setCustomerSearchLoading]=useState(false)
+  const [customer,setCustomer]=useState(emptyCustomer)
   const [productId,setProductId]=useState('')
   const [quantity,setQuantity]=useState(1)
   const [items,setItems]=useState([])
@@ -61,14 +86,10 @@ export const SalespersonOrderRequest=()=>{
 
   useEffect(()=>{
     let active=true
-    Promise.all([
-      fetchProducts({user:true}),
-      getCustomers()
-    ])
-      .then(([productResult,customerResults])=>{
+    fetchProducts({user:true})
+      .then((productResult)=>{
         if(active){
           setProducts(productResult.data)
-          setCustomers(customerResults)
         }
       })
       .catch((requestError)=>{
@@ -80,11 +101,47 @@ export const SalespersonOrderRequest=()=>{
     return ()=>{active=false}
   },[])
 
+  useEffect(()=>{
+    const search=customerSearchTerm.trim()
+    if(!search){
+      setCustomers([])
+      setCustomerSearchLoading(false)
+      return
+    }
+
+    let active=true
+    const controller=new AbortController()
+    setCustomerSearchLoading(true)
+    const timeout=setTimeout(()=>{
+      getCustomers(search,controller.signal)
+        .then((results)=>{
+          if(active) setCustomers(results)
+        })
+        .catch((requestError)=>{
+          if(active){
+            setCustomers([])
+            setError(errorMessage(requestError))
+          }
+        })
+        .finally(()=>{
+          if(active) setCustomerSearchLoading(false)
+        })
+    },300)
+
+    return ()=>{
+      active=false
+      clearTimeout(timeout)
+      controller.abort()
+    }
+  },[customerSearchTerm])
+
   const changeCustomerType=(_,nextType)=>{
     if(!nextType) return
     setCustomerType(nextType)
-    setCustomer({name:'',email:'',phone:''})
-    setSelectedCustomerId('')
+    setCustomer(emptyCustomer())
+    setSelectedCustomer(null)
+    setCustomerSearchInput('')
+    setCustomerSearchTerm('')
     setVisitLogged(false)
     setItems([])
     setError('')
@@ -115,8 +172,8 @@ export const SalespersonOrderRequest=()=>{
   const logVisitAndContinue=async(customerToVisit=customer)=>{
     setError('')
     setMessage('')
-    if(!selectedCustomerId || !customerToVisit.name?.trim() || !customerToVisit.email?.trim() || !customerToVisit.phone?.trim()){
-      setError('اختر عميلًا لديه اسم وبريد إلكتروني ورقم هاتف قبل المتابعة.')
+    if(!selectedCustomer?._id || !customerToVisit.name?.trim() || !customerToVisit.phone?.trim()){
+      setError('اختر عميلًا لديه اسم ورقم هاتف قبل المتابعة.')
       return
     }
 
@@ -145,8 +202,8 @@ export const SalespersonOrderRequest=()=>{
   const saveCustomer=async()=>{
     setError('')
     setMessage('')
-    if(!customer.name.trim() || !customer.email.trim() || !customer.phone.trim()){
-      setError('أدخل اسم العميل الجديد وبريده الإلكتروني ورقم هاتفه.')
+    if(!customer.name.trim() || !customer.phone.trim()){
+      setError('أدخل اسم العميل الجديد ورقم هاتفه.')
       return
     }
 
@@ -162,7 +219,9 @@ export const SalespersonOrderRequest=()=>{
 
     setCustomers((current)=>[...current,savedCustomer].sort((first,second)=>first.name.localeCompare(second.name)))
     setCustomerType('existing')
-    setSelectedCustomerId(savedCustomer._id)
+    setSelectedCustomer(savedCustomer)
+    setCustomerSearchInput(savedCustomer.name)
+    setCustomerSearchTerm('')
     setCustomer(savedCustomer)
     setMessage('تم حفظ العميل. جارٍ تسجيل الزيارة والانتقال إلى طلب المبيعات…')
     try{
@@ -189,7 +248,7 @@ export const SalespersonOrderRequest=()=>{
       setError('احفظ بيانات العميل الجديد أولًا قبل إنشاء طلب المبيعات.')
       return
     }
-    if(!customer.name.trim() || !customer.email.trim() || !customer.phone.trim() || !items.length){
+    if(!customer.name.trim() || !customer.phone.trim() || !items.length){
       setError('أدخل بيانات العميل وأضف منتجًا واحدًا على الأقل.')
       return
     }
@@ -205,8 +264,10 @@ export const SalespersonOrderRequest=()=>{
       })
       setItems([])
       setCustomerType('existing')
-      setSelectedCustomerId('')
-      setCustomer({name:'',email:'',phone:''})
+      setSelectedCustomer(null)
+      setCustomerSearchInput('')
+      setCustomerSearchTerm('')
+      setCustomer(emptyCustomer())
       setVisitLogged(false)
       setStep(0)
       setMessage('تم إرسال طلب المبيعات للموافقة.')
@@ -223,6 +284,10 @@ export const SalespersonOrderRequest=()=>{
   }
 
   const steps=['نوع العميل','بيانات الزيارة','طلب المبيعات']
+  const existingCustomerSelected=customerType==='existing' && Boolean(selectedCustomer)
+  const customerOptions=selectedCustomer && !customers.some((match)=>match._id===selectedCustomer._id)
+    ?[selectedCustomer,...customers]
+    :customers
 
   return (
     <Stack dir="rtl" lang="ar" maxWidth="md" mx="auto" p={{xs:2,md:4}} spacing={3} mb={5} sx={{fontFamily:'Cairo, Tahoma, sans-serif','& *:not(svg)':{fontFamily:'Cairo, Tahoma, sans-serif'}}}>
@@ -372,30 +437,64 @@ export const SalespersonOrderRequest=()=>{
 
               {step===2 && (
                 <>
-                  <Stack spacing={.5}>
-                    <Typography variant="h5" fontWeight={700}>
-                      {customerType==='existing'?'ابحث عن عميلك':'إضافة عميل جديد'}
-                    </Typography>
-                    <Typography color="text.secondary">
+                  <Stack direction="row" alignItems="center" spacing={1.5}>
+                    <Avatar sx={{
+                      width:46,
+                      height:46,
+                      bgcolor:'primary.main',
+                      boxShadow:'0 6px 16px rgba(120,20,30,.18)'
+                    }}>
                       {customerType==='existing'
-                        ?'ابحث بالاسم، وتأكد من بيانات التواصل، ثم سجّل الزيارة.'
-                        :'احفظ بيانات التواصل، وسنسجل الزيارة وننتقل إلى طلب المبيعات.'}
-                    </Typography>
+                        ?<PersonSearchRoundedIcon/>
+                        :<PersonAddAlt1RoundedIcon/>}
+                    </Avatar>
+                    <Box>
+                      <Typography variant="h5" fontWeight={700}>
+                        {customerType==='existing'?'ابحث عن عميلك':'إضافة عميل جديد'}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {customerType==='existing'
+                          ?'ابحث بالاسم، وتأكد من بيانات التواصل، ثم سجّل الزيارة.'
+                          :'احفظ بيانات التواصل، وسنسجل الزيارة وننتقل إلى طلب المبيعات.'}
+                      </Typography>
+                    </Box>
                   </Stack>
 
                   {customerType==='existing' && (
                     <Autocomplete
-                      options={customers}
-                      loading={loading}
-                      value={customers.find((match)=>match._id===selectedCustomerId) || null}
+                      options={customerOptions}
+                      loading={customerSearchLoading}
+                      value={selectedCustomer}
                       getOptionLabel={(option)=>option?.name || ''}
                       isOptionEqualToValue={(option,value)=>option._id===value._id}
+                      inputValue={customerSearchInput}
+                      onInputChange={(_,value,reason)=>{
+                        setCustomerSearchInput(value)
+                        if(reason==='input' || reason==='clear'){
+                          setCustomerSearchTerm(value)
+                          setCustomers([])
+                          if(selectedCustomer){
+                            setSelectedCustomer(null)
+                            setCustomer(emptyCustomer())
+                            setVisitLogged(false)
+                          }
+                          setError('')
+                          setMessage('')
+                        }
+                      }}
                       onChange={(_,foundCustomer)=>{
-                        setSelectedCustomerId(foundCustomer?._id || '')
+                        setSelectedCustomer(foundCustomer || null)
+                        setCustomerSearchInput(foundCustomer?.name || '')
                         setCustomer({
                           name:foundCustomer?.name || '',
                           email:foundCustomer?.email || '',
-                          phone:foundCustomer?.phone || ''
+                          phone:foundCustomer?.phone || '',
+                          alternatePhone:foundCustomer?.alternatePhone || '',
+                          addressDetails:foundCustomer?.addressDetails || '',
+                          region:foundCustomer?.region || '',
+                          governorate:foundCustomer?.governorate || '',
+                          customerType:foundCustomer?.customerType || '',
+                          classification:foundCustomer?.classification || ''
                         })
                         setVisitLogged(false)
                         setError('')
@@ -407,7 +506,7 @@ export const SalespersonOrderRequest=()=>{
                       }}
                       renderOption={(props,option)=>(
                         <li {...props} key={option._id}>
-                          {option.name} — {option.email}
+                          {option.name}{option.email?` — ${option.email}`:''}
                         </li>
                       )}
                       renderInput={(params)=>(
@@ -416,40 +515,118 @@ export const SalespersonOrderRequest=()=>{
                           label="ابحث عن العملاء بالاسم"
                           required
                           placeholder="ابدأ بكتابة اسم العميل"
+                          sx={{
+                            '& .MuiOutlinedInput-root':{
+                              borderRadius:3,
+                              backgroundColor:'background.paper',
+                              transition:'box-shadow .2s ease',
+                              '&.Mui-focused':{
+                                boxShadow:'0 0 0 3px rgba(120,20,30,.10)'
+                              }
+                            }
+                          }}
                         />
                       )}
-                      noOptionsText={loading?'جارٍ تحميل العملاء…':'لم يتم العثور على عملاء'}
+                      noOptionsText={customerSearchLoading
+                        ?'جارٍ البحث عن العملاء…'
+                        :customerSearchTerm.trim()
+                          ?'لم يتم العثور على عملاء'
+                          :'اكتب اسم العميل للبحث'}
                     />
                   )}
 
-                  <Stack direction={{xs:'column',sm:'row'}} spacing={2}>
+                  <Box sx={{
+                    p:{xs:1.5,sm:2.5},
+                    border:'1px solid',
+                    borderColor:'divider',
+                    borderRadius:3.5,
+                    background:'linear-gradient(145deg,#fff 0%,#fafbfc 100%)',
+                    boxShadow:'0 8px 24px rgba(24,39,75,.045)'
+                  }}>
+                    <Stack spacing={2.25}>
+                      <Stack spacing={.25}>
+                        <Typography variant="subtitle1" fontWeight={700}>
+                          {'بيانات العميل'}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {customerType==='existing'
+                            ?'الحقول ذات الخلفية الرمادية محفوظة، ويمكن استكمال الحقول الفارغة.'
+                            :'أدخل البيانات المتاحة للعميل.'}
+                        </Typography>
+                      </Stack>
+                      <Box sx={{
+                        display:'grid',
+                        gridTemplateColumns:{xs:'1fr',sm:'repeat(2,minmax(0,1fr))',md:'repeat(3,minmax(0,1fr))'},
+                        gap:{xs:1.5,sm:2},
+                        '& .MuiOutlinedInput-root':{
+                          borderRadius:2.5,
+                          transition:'box-shadow .2s ease, border-color .2s ease',
+                          '& fieldset':{borderColor:'divider'},
+                          '&:hover fieldset':{borderColor:'primary.light'},
+                          '&.Mui-focused':{boxShadow:'0 0 0 3px rgba(120,20,30,.08)'}
+                        }
+                      }}>
                     <TextField
                       label="اسم العميل"
                       required
                       fullWidth
                       value={customer.name}
                       onChange={(event)=>setCustomer({...customer,name:event.target.value})}
-                      InputProps={{readOnly:customerType==='existing' && Boolean(selectedCustomerId)}}
+                      {...customerFieldProps(existingCustomerSelected && Boolean(selectedCustomer?.name?.trim()))}
                     />
                     <TextField
-                      label="البريد الإلكتروني للعميل"
-                      type="email"
-                      required
-                      fullWidth
-                      value={customer.email}
-                      inputProps={{dir:'ltr'}}
-                      onChange={(event)=>setCustomer({...customer,email:event.target.value})}
-                      InputProps={{readOnly:customerType==='existing' && Boolean(selectedCustomerId)}}
-                    />
-                    <TextField
-                      label="رقم هاتف العميل"
+                      label="رقم الهاتف الأول للعميل"
                       required
                       fullWidth
                       value={customer.phone}
                       inputProps={{dir:'ltr'}}
                       onChange={(event)=>setCustomer({...customer,phone:event.target.value})}
+                      {...customerFieldProps(existingCustomerSelected && Boolean(selectedCustomer?.phone?.trim()))}
                     />
-                  </Stack>
+                    <TextField
+                      label="رقم الهاتف الثاني للعميل"
+                      fullWidth
+                      value={customer.alternatePhone}
+                      inputProps={{dir:'ltr'}}
+                      onChange={(event)=>setCustomer({...customer,alternatePhone:event.target.value})}
+                      {...customerFieldProps(existingCustomerSelected && Boolean(selectedCustomer?.alternatePhone?.trim()))}
+                    />
+                    <TextField
+                      label="المنطقة"
+                      fullWidth
+                      value={customer.region}
+                      onChange={(event)=>setCustomer({...customer,region:event.target.value})}
+                      {...customerFieldProps(existingCustomerSelected && Boolean(selectedCustomer?.region?.trim()))}
+                    />
+                    <TextField
+                      label="المحافظة"
+                      fullWidth
+                      value={customer.governorate}
+                      onChange={(event)=>setCustomer({...customer,governorate:event.target.value})}
+                      {...customerFieldProps(existingCustomerSelected && Boolean(selectedCustomer?.governorate?.trim()))}
+                    />
+                    <TextField
+                      label="العنوان بالتفصيل"
+                      multiline
+                      minRows={2}
+                      fullWidth
+                      value={customer.addressDetails}
+                      onChange={(event)=>setCustomer({...customer,addressDetails:event.target.value})}
+                      {...customerFieldProps(
+                        existingCustomerSelected && Boolean(selectedCustomer?.addressDetails?.trim()),
+                        {gridColumn:{xs:'auto',sm:'span 2',md:'span 3'}}
+                      )}
+                    />
+                    <TextField
+                      label="نوع العميل"
+                      fullWidth
+                      value={customer.customerType}
+                      onChange={(event)=>setCustomer({...customer,customerType:event.target.value})}
+                      {...customerFieldProps(existingCustomerSelected && Boolean(selectedCustomer?.customerType?.trim()))}
+                    />
+                      </Box>
+                    </Stack>
+                  </Box>
 
                   <Stack direction={{xs:'column-reverse',sm:'row'}} justifyContent="space-between" gap={1}>
                     <Button type="button" onClick={()=>setStep(1)} startIcon={<ArrowBackRoundedIcon sx={{transform:'scaleX(-1)'}}/>}>
@@ -471,7 +648,7 @@ export const SalespersonOrderRequest=()=>{
                         type="button"
                         variant="contained"
                         onClick={()=>logVisitAndContinue()}
-                        disabled={loggingVisit || submitting || !selectedCustomerId || !customer.phone.trim()}
+                        disabled={loggingVisit || submitting || !selectedCustomer?._id || !customer.phone.trim()}
                         endIcon={visitLogged?<CheckCircleRoundedIcon/>:<ArrowForwardRoundedIcon sx={{transform:'scaleX(-1)'}}/>}
                         sx={{borderRadius:3,fontWeight:700}}
                       >

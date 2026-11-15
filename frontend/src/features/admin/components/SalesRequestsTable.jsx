@@ -169,6 +169,24 @@ export const SalesRequestsTable=({
                           <Typography variant="subtitle2">{isArabic?'بيانات العميل':'Customer details'}</Typography>
                           <Typography variant="body2" color="text.secondary">{request.customer?.email || '—'}</Typography>
                           <Typography variant="body2" color="text.secondary">{request.customer?.phone || '—'}</Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {isArabic?'الهاتف الثاني':'Alternate phone'}: {request.customer?.alternatePhone || '—'}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {isArabic?'العنوان بالتفصيل':'Detailed address'}: {request.customer?.addressDetails || '—'}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {isArabic?'المنطقة':'Region'}: {request.customer?.region || '—'}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {isArabic?'المحافظة':'Governorate'}: {request.customer?.governorate || '—'}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {isArabic?'نوع العميل':'Customer type'}: {request.customer?.customerType || '—'}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {isArabic?'التصنيف':'Classification'}: {request.customer?.classification || '—'}
+                          </Typography>
                         </Stack>
                         {showSalesperson && (
                           <Stack spacing={0.5} minWidth={{md:220}}>

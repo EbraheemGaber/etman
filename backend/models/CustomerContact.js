@@ -4,8 +4,7 @@ const {Schema}=mongoose
 const customerContactSchema=new Schema({
     createdBy:{
         type:Schema.Types.ObjectId,
-        ref:"User",
-        required:true
+        ref:"User"
     },
     name:{
         type:String,
@@ -14,16 +13,58 @@ const customerContactSchema=new Schema({
     },
     email:{
         type:String,
-        required:true,
         trim:true,
-        lowercase:true,
-        unique:true
+        lowercase:true
     },
     phone:{
         type:String,
-        required:true,
         trim:true
+    },
+    alternatePhone:{
+        type:String,
+        trim:true
+    },
+    addressDetails:{
+        type:String,
+        trim:true
+    },
+    region:{
+        type:String,
+        trim:true
+    },
+    governorate:{
+        type:String,
+        trim:true
+    },
+    customerType:{
+        type:String,
+        trim:true
+    },
+    classification:{
+        type:String,
+        trim:true
+    },
+    importKey:{
+        type:String,
+        select:false
     }
 },{timestamps:true,versionKey:false})
+
+customerContactSchema.index(
+    {email:1},
+    {
+        name:"email_unique_when_present",
+        unique:true,
+        partialFilterExpression:{email:{$type:"string",$gt:""}}
+    }
+)
+customerContactSchema.index(
+    {importKey:1},
+    {
+        name:"customer_import_key_unique",
+        unique:true,
+        partialFilterExpression:{importKey:{$type:"string"}}
+    }
+)
 
 module.exports=mongoose.model("CustomerContact",customerContactSchema)

@@ -15,8 +15,6 @@ import { AddProductPage, AdminOrdersPage, CartPage, CheckoutPage, ForgotPassword
 import { AdminDashboardPage } from './pages/AdminDashboardPage';
 import { AdminStatisticsPage } from './pages/AdminStatisticsPage';
 import { CategoryProductsPage } from './pages/CategoryProductsPage';
-import { SalespersonPage } from './pages/SalespersonPage';
-import { SalespersonOrderRequestPage } from './pages/SalespersonOrderRequestPage';
 import { AdminSalesRequestsPage } from './pages/AdminSalesRequestsPage';
 import { AdminSalespeoplePage } from './pages/AdminSalespeoplePage';
 import { AdminArchivePage } from './pages/AdminArchivePage';
@@ -31,7 +29,6 @@ function AppLayout() {
   const isAuthChecked=useSelector(selectIsAuthChecked)
   const loggedInUser=useSelector(selectLoggedInUser)
   const isAdmin=Boolean(loggedInUser?.isAdmin)
-  const isSalesperson=Boolean(loggedInUser?.isSalesperson)
   const isAuthPage=['/signup','/login','/verify-otp','/forgot-password','/logout'].includes(location.pathname)
     || location.pathname.startsWith('/reset-password/')
   const isOrderSuccessPage=location.pathname.startsWith('/order-success/')
@@ -47,7 +44,7 @@ function AppLayout() {
         <RealtimeOrderEvents />
       </Box>
       {!isAuthPage && !isOrderSuccessPage && !isOrdersPage && !isCartPage && !isCheckoutPage && !isProductDetailsPage && <Footer/>}
-      {isAuthChecked && !isAuthPage && !isAdmin && !isSalesperson && <WhatsAppFloatButton/>}
+      {isAuthChecked && !isAuthPage && !isAdmin && <WhatsAppFloatButton/>}
     </Box>
   );
 }
@@ -57,7 +54,6 @@ function App() {
   const isAuthChecked=useSelector(selectIsAuthChecked)
   const loggedInUser=useSelector(selectLoggedInUser)
   const isAdmin=Boolean(loggedInUser?.isAdmin)
-  const isSalesperson=Boolean(loggedInUser?.isSalesperson)
 
 
   useAuthCheck();
@@ -90,14 +86,6 @@ function App() {
             <Route path='/admin/salespeople' element={<Protected><AdminSalespeoplePage/></Protected>}/>
             <Route path='*' element={<Navigate to={'/admin/orders'}/>}/>
             </>
-          ):isSalesperson?(
-            <>
-            <Route path='/' element={<Protected><SalespersonOrderRequestPage/></Protected>}/>
-            <Route path='/sales/dashboard' element={<Protected><SalespersonPage/></Protected>}/>
-            <Route path='/sales/request-order' element={<Protected><SalespersonOrderRequestPage/></Protected>}/>
-            <Route path='/profile' element={<Protected><UserProfilePage/></Protected>}/>
-            <Route path='*' element={<Navigate to={'/sales/request-order'}/>}/>
-            </>
           ):(
             // user routes
             <>
@@ -117,7 +105,7 @@ function App() {
 
       </Route>
     )
-  ),[isAdmin,isSalesperson])
+  ),[isAdmin])
 
   
   return (

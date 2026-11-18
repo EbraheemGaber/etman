@@ -59,6 +59,7 @@ export const UserOrders = () => {
 
     const dispatch=useDispatch()
     const loggedInUser=useSelector(selectLoggedInUser)
+    const isSalesperson=Boolean(loggedInUser?.isSalesperson)
     const orders=useSelector(selectOrders)
     const cartItems=useSelector(selectCartItems)
     const orderFetchStatus=useSelector(selectOrderFetchStatus)
@@ -166,13 +167,13 @@ export const UserOrders = () => {
                                     WebkitOverflowScrolling:'touch'
                                 }}
                             >
-                                <Table size="small" sx={{minWidth:620}} aria-label={"سجل الطلبات"}>
+                                <Table size="small" sx={{minWidth:isSalesperson?540:620}} aria-label={"سجل الطلبات"}>
                                     <TableHead>
                                         <TableRow sx={{'& th':{color:'text.secondary',fontWeight:600,whiteSpace:'nowrap',borderBottom:'1px solid #e0e0e0'}}}>
                                             <TableCell padding="checkbox" />
                                             <TableCell>{'رقم الطلب'}</TableCell>
                                             <TableCell>{'المنتجات'}</TableCell>
-                                            <TableCell align="right">{'الإجمالي'}</TableCell>
+                                            {!isSalesperson && <TableCell align="right">{'الإجمالي'}</TableCell>}
                                             <TableCell>{'تاريخ الطلب'}</TableCell>
                                             <TableCell>{'الحالة'}</TableCell>
                                         </TableRow>
@@ -181,6 +182,7 @@ export const UserOrders = () => {
                                         {orders.map((order)=>{
                                             const expanded=expandedOrderId===order._id
                                             const orderItems=order.item || []
+                                            const orderAddress=Array.isArray(order.address)?order.address[0]:order.address
                                             const statusColors={
                                                 Pending:{bgcolor:'#dfc9f7',color:'#7c59a4'},
                                                 Dispatched:{bgcolor:'#feed80',color:'#927b1e'},
@@ -211,9 +213,11 @@ export const UserOrders = () => {
                                                         <TableCell sx={{whiteSpace:'nowrap'}}>
                                                             {orderItems.length} {orderItems.length===1?'منتج':'منتجات'}
                                                         </TableCell>
-                                                        <TableCell align="right" sx={{whiteSpace:'nowrap',fontWeight:600}}>
-                                                            {formatCurrency(order.total)}
-                                                        </TableCell>
+                                                        {!isSalesperson && (
+                                                            <TableCell align="right" sx={{whiteSpace:'nowrap',fontWeight:600}}>
+                                                                {formatCurrency(order.total)}
+                                                            </TableCell>
+                                                        )}
                                                         <TableCell sx={{whiteSpace:'nowrap'}}>
                                                             {formatOrderDate(order.createdAt)}
                                                         </TableCell>
@@ -226,17 +230,35 @@ export const UserOrders = () => {
                                                         </TableCell>
                                                     </TableRow>
                                                     <TableRow>
-                                                        <TableCell colSpan={6} sx={{p:0,borderBottom:expanded?'1px solid rgba(224, 224, 224, 1)':0}}>
+                                                        <TableCell colSpan={isSalesperson?5:6} sx={{p:0,borderBottom:expanded?'1px solid rgba(224, 224, 224, 1)':0}}>
                                                             <Collapse in={expanded} timeout={220} unmountOnExit>
                                                                 <Stack spacing={1.5} sx={{px:3,py:2,backgroundColor:'action.hover'}}>
                                                                     <Stack direction={{xs:'column',sm:'row'}} justifyContent="space-between" spacing={1}>
                                                                         <Typography variant="subtitle2">
                                                                             {'الطلب'} #{order._id?.slice(-6).toUpperCase() || '—'} · {paymentModeLabels[order.paymentMode] || order.paymentMode || 'طريقة الدفع غير متاحة'}
                                                                         </Typography>
-                                                                        <Typography variant="body2" color="text.secondary">
-                                                                            الإجمالي: {formatCurrency(order.total)}
-                                                                        </Typography>
+                                                                        {!isSalesperson && (
+                                                                            <Typography variant="body2" color="text.secondary">
+                                                                                الإجمالي: {formatCurrency(order.total)}
+                                                                            </Typography>
+                                                                        )}
                                                                     </Stack>
+                                                                    {isSalesperson && orderAddress?.customerName && (
+                                                                        <Stack spacing={.25} sx={{pb:1,borderBottom:'1px solid',borderColor:'divider'}}>
+                                                                            <Typography variant="subtitle2">{'بيانات العميل'}</Typography>
+                                                                            <Typography variant="body2">{orderAddress.customerName}</Typography>
+                                                                            {orderAddress.phoneNumber && (
+                                                                                <Typography variant="body2" color="text.secondary">
+                                                                                    {orderAddress.phoneNumber}
+                                                                                </Typography>
+                                                                            )}
+                                                                            {[orderAddress.street,orderAddress.city,orderAddress.state].filter(Boolean).length>0 && (
+                                                                                <Typography variant="body2" color="text.secondary">
+                                                                                    {[orderAddress.street,orderAddress.city,orderAddress.state].filter(Boolean).join('، ')}
+                                                                                </Typography>
+                                                                            )}
+                                                                        </Stack>
+                                                                    )}
                                                                     {orderItems.map((entry,index)=>{
                                                                         const product=entry.product || {}
                                                                         const alreadyInCart=cartItems.some((cartItem)=>cartItem.product?._id===product._id)
@@ -257,7 +279,9 @@ export const UserOrders = () => {
                                                                                 <Stack flex={1} spacing={0.25}>
                                                                                     <Typography variant="body2" fontWeight={600}>{product.title || 'المنتج'}</Typography>
                                                                                     <Typography variant="caption" color="text.secondary">
-                                                                                        الكمية: {entry.quantity} · {formatCurrency(product.price)} للقطعة
+                                                                                        {isSalesperson
+                                                                                            ?`الكمية: ${entry.quantity}`
+                                                                                            :`الكمية: ${entry.quantity} · ${formatCurrency(product.price)} للقطعة`}
                                                                                     </Typography>
                                                                                 </Stack>
                                                                                 {product._id && (

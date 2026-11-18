@@ -48,9 +48,8 @@ export const Navbar=({isProductList=false})=> {
   const location=useLocation()
   const wishlistItems=useSelector(selectWishlistItems)
   const isProductFilterOpen=useSelector(selectProductIsFilterOpen)
-  const isCustomer=!loggedInUser?.isAdmin && !loggedInUser?.isSalesperson
+  const isCustomer=!loggedInUser?.isAdmin
   const isAdmin=Boolean(loggedInUser?.isAdmin)
-  const isSalesperson=Boolean(loggedInUser?.isSalesperson)
   const isMobileStorefront=isCustomer && isMobile
   const [searchText,setSearchText]=React.useState('')
   const [expandedSearchCategoryId,setExpandedSearchCategoryId]=React.useState(null)
@@ -130,7 +129,7 @@ export const Navbar=({isProductList=false})=> {
 
   const handleBack=()=>{
     if(location.key==='default'){
-      navigate(isSalesperson?'/sales/request-order':isAdmin?'/admin/orders':'/',{replace:true})
+      navigate(isAdmin?'/admin/orders':'/',{replace:true})
       return
     }
 
@@ -138,11 +137,10 @@ export const Navbar=({isProductList=false})=> {
   }
 
   const settings = loggedInUser ? [
-    {name:isSalesperson?'الرئيسية':'Home',to:isSalesperson?"/sales/request-order":"/"},
-    {name:isSalesperson?'الملف الشخصي':'Profile',to:loggedInUser?.isAdmin?"/admin/profile":"/profile"},
-    ...(!isSalesperson && !isAdmin?[{name:'My orders',to:'/orders'}]:[]),
+    {name:'Home',to:"/"},
+    {name:'Profile',to:loggedInUser?.isAdmin?"/admin/profile":"/profile"},
+    ...(!isAdmin?[{name:'My orders',to:'/orders'}]:[]),
     ...(isAdmin?[{name:'Manage salespeople',to:'/admin/salespeople'}]:[]),
-    ...(isSalesperson?[{name:'لوحة المبيعات',to:'/sales/dashboard'}]:[]),
   ] : [
     {name:'تسجيل الدخول',to:'/login'},
     {name:'إنشاء حساب',to:'/signup'}
@@ -153,12 +151,10 @@ export const Navbar=({isProductList=false})=> {
     <AppBar
       position="sticky"
       dir="ltr"
-      lang={isSalesperson?'ar':undefined}
       sx={{
         backgroundColor:brandRed,
         boxShadow:"none",
         color:"#fff",
-        ...(isSalesperson?{fontFamily:'Cairo, Tahoma, sans-serif','& *:not(svg)':{fontFamily:'Cairo, Tahoma, sans-serif'}}:{})
       }}
     >
       <Toolbar sx={{
@@ -182,7 +178,7 @@ export const Navbar=({isProductList=false})=> {
             variant="h6"
             noWrap
             component={Link}
-            to={isSalesperson?"/sales/request-order":isAdmin?"/admin/orders":"/"}
+            to={isAdmin?"/admin/orders":"/"}
             sx={{
               display:'flex',
               alignItems:'center',
@@ -238,31 +234,6 @@ export const Navbar=({isProductList=false})=> {
                 {item.name}
               </Button>
             ))}
-          </Box>
-        )}
-
-        {loggedInUser?.isSalesperson && (
-          <Box
-            component="nav"
-            aria-label="التنقل الخاص بمندوب المبيعات"
-            sx={{display:'flex',alignItems:'center',gap:{xs:.5,sm:1},flex:1,minWidth:0}}
-          >
-            <Button
-              component={Link}
-              to="/sales/dashboard"
-              size="small"
-              sx={{flexShrink:0,color:'inherit',fontSize:{xs:'.68rem',sm:'.85rem'},px:{xs:.75,sm:1.25}}}
-            >
-              {'لوحة التحكم'}
-            </Button>
-            <Button
-              component={Link}
-              to="/sales/request-order"
-              size="small"
-              sx={{flexShrink:0,color:'inherit',fontSize:{xs:'.68rem',sm:'.85rem'},px:{xs:.75,sm:1.25}}}
-            >
-              {'طلب مبيعات'}
-            </Button>
           </Box>
         )}
 
@@ -455,10 +426,10 @@ export const Navbar=({isProductList=false})=> {
             </Tooltip>
           )}
 
-          <Tooltip title={isSalesperson?"فتح قائمة الحساب":"Open account menu"}>
+          <Tooltip title="Open account menu">
             <IconButton
               onClick={handleOpenUserMenu}
-              aria-label={isSalesperson?"فتح قائمة الحساب":"Open account menu"}
+              aria-label="Open account menu"
               sx={{color:'inherit',ml:{xs:0,sm:1},borderRadius:2,gap:.75,px:{xs:.5,sm:1}}}
             >
               <Typography

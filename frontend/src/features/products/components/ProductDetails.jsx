@@ -69,8 +69,8 @@ export const ProductDetails = () => {
   const isProductAlreadyInWishlist = wishlistItems.some(
     (item) => item.product._id === id,
   );
-  const isStorefrontCustomer =
-    !loggedInUser?.isAdmin && !loggedInUser?.isSalesperson;
+  const isStorefrontCustomer = !loggedInUser?.isAdmin;
+  const isSalesperson = Boolean(loggedInUser?.isSalesperson);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -458,29 +458,33 @@ export const ProductDetails = () => {
                     boxShadow: "0 2px 8px rgba(0,0,0,.05)",
                   }}
                 >
-                  <Typography sx={{ color: "#666", fontSize: "0.95rem" }}>
-                    {"السعر"}
-                  </Typography>
-                  <Stack
-                    direction="row"
-                    spacing={1}
-                    alignItems="baseline"
-                    sx={{ mt: 0.5, mb: 2.5 }}
-                  >
-                    <Typography
-                      sx={{
-                        fontSize: { xs: "2rem", md: "2.4rem" },
-                        fontWeight: 600,
-                        lineHeight: 1,
-                        color: "#171717",
-                      }}
-                    >
-                      {priceDisplay}
-                    </Typography>
-                    <Typography sx={{ fontSize: "1rem", color: "#555" }}>
-                      جنيه مصري
-                    </Typography>
-                  </Stack>
+                  {!isSalesperson && (
+                    <>
+                      <Typography sx={{ color: "#666", fontSize: "0.95rem" }}>
+                        {"السعر"}
+                      </Typography>
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        alignItems="baseline"
+                        sx={{ mt: 0.5, mb: 2.5 }}
+                      >
+                        <Typography
+                          sx={{
+                            fontSize: { xs: "2rem", md: "2.4rem" },
+                            fontWeight: 600,
+                            lineHeight: 1,
+                            color: "#171717",
+                          }}
+                        >
+                          {priceDisplay}
+                        </Typography>
+                        <Typography sx={{ fontSize: "1rem", color: "#555" }}>
+                          جنيه مصري
+                        </Typography>
+                      </Stack>
+                    </>
+                  )}
                   {!loggedInUser?.isAdmin && (
                     <>
                       <Stack

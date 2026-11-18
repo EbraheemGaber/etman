@@ -113,9 +113,16 @@ PRODUCTION="false" # Initially set to false for development
 - Create a `.env` file in the `frontend` directory
 - Add the following variable:
 ```bash
-# Backend URL (adjust if needed)
+# Backend origin or URL; the frontend adds /api automatically
 REACT_APP_BASE_URL="http://localhost:8000" 
 ```
+
+### Deploying behind Nginx with a static IP
+- Set the frontend's `REACT_APP_BASE_URL` to the backend origin, for example `http://YOUR_STATIC_IP`. Do not add a trailing slash; `/api` is added automatically. The frontend and backend must both use HTTPS in production when secure cookies are enabled.
+- Set the backend `ORIGIN` to the exact frontend origin (scheme, host, and port), and set `PRODUCTION="true"` when HTTPS is configured.
+- Set `PUBLIC_API_URL` to the public backend origin if product image URLs should use a different host. Keep it free of the `/api` suffix.
+- Copy and adapt [`backend/deploy/nginx.conf.example`](./backend/deploy/nginx.conf.example) for your server. It serves the React build, forwards `/api/`, `/socket.io/`, and `/uploads/` to the backend, and supports the single-page app routes.
+- Run the backend with `PORT=8000` (or your chosen port) and keep that port private behind Nginx. Allow public HTTP/HTTPS traffic only as required by your deployment.
 
 **Important**
 - Replace all placeholders (e.g., your_database_name, your_email) with your actual values.

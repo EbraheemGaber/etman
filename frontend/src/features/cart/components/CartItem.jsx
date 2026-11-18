@@ -14,7 +14,7 @@ const formatPrice = (price, arabic = false) => new Intl.NumberFormat(
         : { minimumFractionDigits: 2, maximumFractionDigits: 2 }
 ).format(price)
 
-export const CartItem = ({ arabic = false, id, thumbnail, title, category, price, quantity, stockQuantity, isUnlimitedStock, productId }) => {
+export const CartItem = ({ arabic = false, hidePrices = false, id, thumbnail, title, category, price, quantity, stockQuantity, isUnlimitedStock, productId }) => {
     const dispatch = useDispatch()
     const theme = useTheme()
     const isMobile = useMediaQuery(theme.breakpoints.down(600))
@@ -74,14 +74,18 @@ export const CartItem = ({ arabic = false, id, thumbnail, title, category, price
                     </Stack>
 
                     <Stack alignItems="flex-end" spacing={0.5} sx={{ flex: '0 0 auto' }}>
-                        <Typography sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}>
-                            {arabic ? `${formatPrice(price * quantity, true)} ج.م` : `EGP ${formatPrice(price * quantity)}`}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
-                            {arabic
-                                ? `${formatPrice(price, true)} ج.م للقطعة`
-                                : `EGP ${formatPrice(price)} each`}
-                        </Typography>
+                        {!hidePrices && (
+                            <>
+                                <Typography sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}>
+                                    {arabic ? `${formatPrice(price * quantity, true)} ج.م` : `EGP ${formatPrice(price * quantity)}`}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
+                                    {arabic
+                                        ? `${formatPrice(price, true)} ج.م للقطعة`
+                                        : `EGP ${formatPrice(price)} each`}
+                                </Typography>
+                            </>
+                        )}
                         <IconButton
                             aria-label={arabic ? `حذف ${title} من السلة` : `Remove ${title} from cart`}
                             size="small"

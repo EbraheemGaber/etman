@@ -8,6 +8,7 @@ import { SHIPPING, TAXES } from '../../../constants'
 import ShoppingCartOutlinedIcon from '@mui/icons-material/ShoppingCartOutlined'
 import { resetCartItemRemoveStatus, selectCartItemRemoveStatus, selectCartItems, selectCartStatus } from '../CartSlice'
 import { CartItem } from './CartItem'
+import { selectLoggedInUser } from '../../auth/AuthSlice'
 
 const formatPrice = (price, arabic = false) => new Intl.NumberFormat(
     arabic ? 'ar-EG-u-nu-latn' : 'en-US',
@@ -19,6 +20,7 @@ const formatPrice = (price, arabic = false) => new Intl.NumberFormat(
 export const Cart = ({ checkout, arabic: arabicOverride }) => {
     const arabic = arabicOverride ?? !checkout
     const items = useSelector(selectCartItems)
+    const isSalesperson=Boolean(useSelector(selectLoggedInUser)?.isSalesperson)
     const cartStatus = useSelector(selectCartStatus)
     const subtotal = items.reduce((total, item) => item.product.price * item.quantity + total, 0)
     const totalItems = items.reduce((total, item) => total + item.quantity, 0)
@@ -132,6 +134,7 @@ export const Cart = ({ checkout, arabic: arabicOverride }) => {
                             <React.Fragment key={item._id}>
                                 <CartItem
                                     arabic={arabic}
+                                    hidePrices={isSalesperson}
                                     id={item._id}
                                     title={item.product.title}
                                     category={item.product.category.name}
@@ -183,38 +186,48 @@ export const Cart = ({ checkout, arabic: arabicOverride }) => {
                                 />
                             </Stack>
 
-                            <Stack spacing={1.6}>
-                                <Stack direction="row" dir={arabic ? 'rtl' : undefined} justifyContent="space-between" spacing={2}>
-                                    <Typography variant="body2" color="text.secondary">{arabic ? 'المجموع الفرعي' : 'Subtotal'}</Typography>
-                                    <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                                        {arabic ? `${formatPrice(subtotal, true)} ج.م` : `EGP ${formatPrice(subtotal)}`}
-                                    </Typography>
-                                </Stack>
-                                <Stack direction="row" dir={arabic ? 'rtl' : undefined} justifyContent="space-between" spacing={2}>
-                                    <Typography variant="body2" color="text.secondary">{arabic ? 'الشحن' : 'Shipping'}</Typography>
-                                    <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                                        {checkout
-                                            ? (arabic ? `${formatPrice(SHIPPING, true)} ج.م` : `EGP ${formatPrice(SHIPPING)}`)
-                                            : (arabic ? 'يُحسب عند إتمام الطلب' : 'Calculated at checkout')}
-                                    </Typography>
-                                </Stack>
-                                {checkout && (
+                            {isSalesperson ? (
+                                <Stack spacing={1.6}>
                                     <Stack direction="row" dir={arabic ? 'rtl' : undefined} justifyContent="space-between" spacing={2}>
-                                        <Typography variant="body2" color="text.secondary">{arabic ? 'الضرائب' : 'Taxes'}</Typography>
-                                        <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                                            {arabic ? `${formatPrice(TAXES, true)} ج.م` : `EGP ${formatPrice(TAXES)}`}
+                                        <Typography variant="body2" color="text.secondary">{'إجمالي الكمية'}</Typography>
+                                        <Typography variant="body2" sx={{ fontWeight: 700 }}>{totalItems}</Typography>
+                                    </Stack>
+                                </Stack>
+                            ) : (
+                                <>
+                                    <Stack spacing={1.6}>
+                                        <Stack direction="row" dir={arabic ? 'rtl' : undefined} justifyContent="space-between" spacing={2}>
+                                            <Typography variant="body2" color="text.secondary">{arabic ? 'المجموع الفرعي' : 'Subtotal'}</Typography>
+                                            <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                                                {arabic ? `${formatPrice(subtotal, true)} ج.م` : `EGP ${formatPrice(subtotal)}`}
+                                            </Typography>
+                                        </Stack>
+                                        <Stack direction="row" dir={arabic ? 'rtl' : undefined} justifyContent="space-between" spacing={2}>
+                                            <Typography variant="body2" color="text.secondary">{arabic ? 'الشحن' : 'Shipping'}</Typography>
+                                            <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                                                {checkout
+                                                    ? (arabic ? `${formatPrice(SHIPPING, true)} ج.م` : `EGP ${formatPrice(SHIPPING)}`)
+                                                    : (arabic ? 'يُحسب عند إتمام الطلب' : 'Calculated at checkout')}
+                                            </Typography>
+                                        </Stack>
+                                        {checkout && (
+                                            <Stack direction="row" dir={arabic ? 'rtl' : undefined} justifyContent="space-between" spacing={2}>
+                                                <Typography variant="body2" color="text.secondary">{arabic ? 'الضرائب' : 'Taxes'}</Typography>
+                                                <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                                                    {arabic ? `${formatPrice(TAXES, true)} ج.م` : `EGP ${formatPrice(TAXES)}`}
+                                                </Typography>
+                                            </Stack>
+                                        )}
+                                    </Stack>
+                                    <Divider sx={{ my: 2, borderStyle: 'dashed', borderColor: arabic && checkout ? '#f0d9d5' : undefined }} />
+                                    <Stack direction="row" dir={arabic ? 'rtl' : undefined} justifyContent="space-between" alignItems="center">
+                                        <Typography sx={{ fontWeight: 800, fontFamily: arabic && checkout ? 'Cairo, Tahoma, sans-serif' : undefined }}>{arabic ? 'الإجمالي' : 'Total'}</Typography>
+                                        <Typography sx={{ fontWeight: 800, fontSize: '1.2rem', color: arabic && checkout ? '#b71c1c' : undefined, fontFamily: arabic && checkout ? 'Cairo, Tahoma, sans-serif' : undefined }}>
+                                            {arabic ? `${formatPrice(total, true)} ج.م` : `EGP ${formatPrice(checkout ? total : subtotal)}`}
                                         </Typography>
                                     </Stack>
-                                )}
-                            </Stack>
-
-                            <Divider sx={{ my: 2, borderStyle: 'dashed', borderColor: arabic && checkout ? '#f0d9d5' : undefined }} />
-                            <Stack direction="row" dir={arabic ? 'rtl' : undefined} justifyContent="space-between" alignItems="center">
-                                <Typography sx={{ fontWeight: 800, fontFamily: arabic && checkout ? 'Cairo, Tahoma, sans-serif' : undefined }}>{arabic ? 'الإجمالي' : 'Total'}</Typography>
-                                <Typography sx={{ fontWeight: 800, fontSize: '1.2rem', color: arabic && checkout ? '#b71c1c' : undefined, fontFamily: arabic && checkout ? 'Cairo, Tahoma, sans-serif' : undefined }}>
-                                    {arabic ? `${formatPrice(total, true)} ج.م` : `EGP ${formatPrice(checkout ? total : subtotal)}`}
-                                </Typography>
-                            </Stack>
+                                </>
+                            )}
                             {!checkout && (
                                 <Typography dir="rtl" variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1, textAlign: 'right' }}>
                                     {'يتم حساب تكلفة الشحن والضرائب عند إتمام الطلب.'}

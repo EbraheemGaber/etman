@@ -23,13 +23,14 @@ const { createRealtimeServer } = require("./realtime")
 
 // server init
 const server=express()
+const frontendBuildPath=path.resolve(__dirname,"..","frontend","build")
 
 const isAllowedLocalFrontend=(origin)=>{
     if(process.env.PRODUCTION==='true') return false
 
     try{
         const {protocol,hostname,port}=new URL(origin)
-        if(protocol!=='http:' || port!=='3000') return false
+        if(protocol!=='http:' || !['','3000'].includes(port)) return false
         if(hostname==='localhost' || hostname==='127.0.0.1') return true
         if(isIP(hostname)!==4) return false
 
@@ -70,28 +71,37 @@ server.use(morgan("tiny"))
 server.use("/uploads/products",express.static(path.join(__dirname,"uploads","products"),{index:false,dotfiles:"deny"}))
 
 // routeMiddleware
-server.use("/auth",authRoutes)
-server.use("/users",userRoutes)
-server.use("/products",productRoutes)
-server.use("/orders",orderRoutes)
-server.use("/sales-requests",salesRequestRoutes)
-server.use("/cart",cartRoutes)
-server.use("/brands",brandRoutes)
-server.use("/categories",categoryRoutes)
-server.use("/address",addressRoutes)
-server.use("/reviews",reviewRoutes)
-server.use("/wishlist",wishlistRoutes)
+server.use("/api/auth",authRoutes)
+server.use("/api/users",userRoutes)
+server.use("/api/products",productRoutes)
+server.use("/api/orders",orderRoutes)
+server.use("/api/sales-requests",salesRequestRoutes)
+server.use("/api/cart",cartRoutes)
+server.use("/api/brands",brandRoutes)
+server.use("/api/categories",categoryRoutes)
+server.use("/api/address",addressRoutes)
+server.use("/api/reviews",reviewRoutes)
+server.use("/api/wishlist",wishlistRoutes)
 
-
-
-server.get("/",(req,res)=>{
+server.get("/health",(req,res)=>{
     res.status(200).json({message:'running'})
+})
+
+server.use(express.static(frontendBuildPath))
+server.get("*",(req,res,next)=>{
+    if(/^\/(?:api|uploads|socket\.io)(?:\/|$)/.test(req.path)){
+        return next()
+    }
+    res.sendFile(path.join(frontendBuildPath,"index.html"),(error)=>{
+        if(error) next(error)
+    })
 })
 
 const httpServer=http.createServer(server)
 const io=createRealtimeServer(httpServer,isAllowedFrontend)
 server.set('io',io)
 
-httpServer.listen(8000,()=>{
-    console.log('server [STARTED] ~ http://localhost:8000');
+const port=process.env.PORT || 8000
+httpServer.listen(port,()=>{
+    console.log(`server [STARTED] ~ http://localhost:${port}`);
 })

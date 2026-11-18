@@ -227,6 +227,21 @@ export const AdminOrders=({archiveMode=false})=>{
                               <Typography variant="subtitle2">{'عنوان الشحن'}</Typography>
                               {address ? (
                                 <>
+                                  {address.customerName && (
+                                    <Typography variant="body2" fontWeight={600}>
+                                      {address.customerName}
+                                    </Typography>
+                                  )}
+                                  {address.phoneNumber && (
+                                    <Typography variant="body2" color="text.secondary">
+                                      {`الهاتف: ${address.phoneNumber}`}
+                                    </Typography>
+                                  )}
+                                  {address.email && (
+                                    <Typography variant="body2" color="text.secondary">
+                                      {address.email}
+                                    </Typography>
+                                  )}
                                   {address.street && <Typography variant="body2" color="text.secondary">{address.street}</Typography>}
                                   {[address.city,address.state,address.postalCode].filter(Boolean).length ? (
                                     <Typography variant="body2" color="text.secondary">

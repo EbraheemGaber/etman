@@ -1,17 +1,32 @@
 import { useEffect, useState } from 'react'
-import { Box, Button, Grid, IconButton, Paper, Radio, Stack, TextField, Typography } from '@mui/material'
+import { Autocomplete, Box, Button, Grid, IconButton, Paper, Radio, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material'
 import { LoadingButton } from '@mui/lab'
 import { useForm } from 'react-hook-form'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import LocalShippingOutlinedIcon from '@mui/icons-material/LocalShippingOutlined'
+import PersonAddAlt1RoundedIcon from '@mui/icons-material/PersonAddAlt1Rounded'
+import PersonSearchRoundedIcon from '@mui/icons-material/PersonSearchRounded'
 import { toast } from 'react-toastify'
 import { addAddressAsync, selectAddressAddStatus, selectAddresses } from '../../address/AddressSlice'
 import { selectLoggedInUser } from '../../auth/AuthSlice'
 import { createOrderAsync, selectCurrentOrder, selectOrderStatus } from '../../order/OrderSlice'
 import { resetCartByUserIdAsync, selectCartItems, selectCartStatus } from '../../cart/CartSlice'
+import { createCustomer, getCustomers } from '../../sales/SalesApi'
 import { SHIPPING, TAXES } from '../../../constants'
+
+const emptySalesCustomer=()=>({
+  name:'',
+  email:'',
+  phone:'',
+  alternatePhone:'',
+  addressDetails:'',
+  region:'',
+  governorate:'',
+  customerType:'',
+  classification:''
+})
 
 const formatPrice=(value)=>new Intl.NumberFormat('ar-EG-u-nu-latn',{
   maximumFractionDigits:2
@@ -24,8 +39,192 @@ const ltrFieldSx={
 
 const ltrInputProps={dir:'ltr'}
 
-const OrderSummary=({items,subtotal,onContinue,buttonLabel,isSubmitting})=>{
+const SalespersonCustomerSection=({
+  customerType,
+  onCustomerTypeChange,
+  customers,
+  customerSearchLoading,
+  selectedCustomer,
+  customerSearchInput,
+  onCustomerSearchInputChange,
+  onCustomerSelect,
+  customer,
+  onCustomerChange
+})=>{
+  const existingCustomerSelected=customerType==='existing' && Boolean(selectedCustomer)
+  const customerOptions=selectedCustomer && !customers.some((match)=>match._id===selectedCustomer._id)
+    ?[selectedCustomer,...customers]
+    :customers
+
+  const fieldProps=(field)=>({
+    InputProps:{readOnly:existingCustomerSelected && Boolean(selectedCustomer?.[field]?.trim())}
+  })
+
+  return (
+    <Paper elevation={0} sx={{p:{xs:2,sm:3},border:'1px solid #f0dedd',borderRadius:2.5,bgcolor:'#fff'}}>
+      <Stack spacing={2.25}>
+        <Stack spacing={.5}>
+          <Typography component="h2" sx={{fontSize:20,fontWeight:800,color:'#302526'}}>
+            {'بيانات العميل'}
+          </Typography>
+          <Typography sx={{fontSize:13,color:'#807475'}}>
+            {'اختر نوع العميل وأدخل بيانات التواصل والتوصيل.'}
+          </Typography>
+        </Stack>
+
+        <ToggleButtonGroup
+          value={customerType}
+          exclusive
+          onChange={onCustomerTypeChange}
+          aria-label="نوع العميل"
+          fullWidth
+          sx={{gap:1.5,'& .MuiToggleButtonGroup-grouped':{border:'1px solid #eee3e3 !important',borderRadius:'14px !important'}}}
+        >
+          <ToggleButton value="existing" sx={{flex:1,py:1.5,textTransform:'none'}}>
+            <Stack alignItems="center" spacing={.5}>
+              <PersonSearchRoundedIcon sx={{fontSize:32,color:'#c62828'}}/>
+              <Typography sx={{fontWeight:800}}>{'عميل حالي'}</Typography>
+            </Stack>
+          </ToggleButton>
+          <ToggleButton value="new" sx={{flex:1,py:1.5,textTransform:'none'}}>
+            <Stack alignItems="center" spacing={.5}>
+              <PersonAddAlt1RoundedIcon sx={{fontSize:32,color:'#c62828'}}/>
+              <Typography sx={{fontWeight:800}}>{'عميل جديد'}</Typography>
+            </Stack>
+          </ToggleButton>
+        </ToggleButtonGroup>
+
+        {customerType==='existing' && (
+          <Autocomplete
+            options={customerOptions}
+            loading={customerSearchLoading}
+            value={selectedCustomer}
+            getOptionLabel={(option)=>option?.name || ''}
+            isOptionEqualToValue={(option,value)=>option._id===value._id}
+            inputValue={customerSearchInput}
+            onInputChange={onCustomerSearchInputChange}
+            onChange={onCustomerSelect}
+            renderOption={(props,option)=>(
+              <li {...props} key={option._id}>
+                {option.name}{option.phone?` — ${option.phone}`:''}
+              </li>
+            )}
+            renderInput={(params)=>(
+              <TextField
+                {...params}
+                label="ابحث عن العميل بالاسم"
+                placeholder="ابدأ بكتابة اسم العميل"
+                sx={{'& .MuiOutlinedInput-root':{borderRadius:1.75,bgcolor:'#fff'}}}
+              />
+            )}
+            noOptionsText={customerSearchLoading
+              ?'جارٍ البحث عن العملاء…'
+              :customerSearchInput.trim()
+                ?'لم يتم العثور على عملاء'
+                :'اكتب اسم العميل للبحث'}
+          />
+        )}
+
+        <Grid container spacing={1.75}>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              required
+              label="اسم العميل"
+              value={customer.name}
+              onChange={(event)=>onCustomerChange({...customer,name:event.target.value})}
+              {...fieldProps('name')}
+              sx={{'& .MuiOutlinedInput-root':{borderRadius:1.75,bgcolor:'inherit'}}}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              required
+              label="رقم الهاتف"
+              type="tel"
+              value={customer.phone}
+              onChange={(event)=>onCustomerChange({...customer,phone:event.target.value})}
+              inputProps={ltrInputProps}
+              {...fieldProps('phone')}
+              sx={{...ltrFieldSx,'& .MuiOutlinedInput-root':{borderRadius:1.75,bgcolor:'inherit'}}}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              type="email"
+              label="البريد الإلكتروني"
+              value={customer.email}
+              onChange={(event)=>onCustomerChange({...customer,email:event.target.value})}
+              inputProps={ltrInputProps}
+              {...fieldProps('email')}
+              sx={{...ltrFieldSx,'& .MuiOutlinedInput-root':{borderRadius:1.75,bgcolor:'inherit'}}}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label="رقم هاتف إضافي"
+              type="tel"
+              value={customer.alternatePhone}
+              onChange={(event)=>onCustomerChange({...customer,alternatePhone:event.target.value})}
+              inputProps={ltrInputProps}
+              {...fieldProps('alternatePhone')}
+              sx={{...ltrFieldSx,'& .MuiOutlinedInput-root':{borderRadius:1.75,bgcolor:'inherit'}}}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label="المنطقة"
+              value={customer.region}
+              onChange={(event)=>onCustomerChange({...customer,region:event.target.value})}
+              {...fieldProps('region')}
+              sx={{'& .MuiOutlinedInput-root':{borderRadius:1.75,bgcolor:'inherit'}}}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label="المحافظة"
+              value={customer.governorate}
+              onChange={(event)=>onCustomerChange({...customer,governorate:event.target.value})}
+              {...fieldProps('governorate')}
+              sx={{'& .MuiOutlinedInput-root':{borderRadius:1.75,bgcolor:'inherit'}}}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label="نوع العميل"
+              value={customer.customerType}
+              onChange={(event)=>onCustomerChange({...customer,customerType:event.target.value})}
+              {...fieldProps('customerType')}
+              sx={{'& .MuiOutlinedInput-root':{borderRadius:1.75,bgcolor:'inherit'}}}
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              multiline
+              minRows={2}
+              label="العنوان بالتفصيل"
+              value={customer.addressDetails}
+              onChange={(event)=>onCustomerChange({...customer,addressDetails:event.target.value})}
+              {...fieldProps('addressDetails')}
+              sx={{'& .MuiOutlinedInput-root':{borderRadius:1.75,bgcolor:'inherit'}}}
+            />
+          </Grid>
+        </Grid>
+      </Stack>
+    </Paper>
+  )
+}
+
+const OrderSummary=({items,subtotal,onContinue,buttonLabel,isSubmitting,hidePrices=false})=>{
   const total=subtotal+SHIPPING+TAXES
+  const totalQuantity=items.reduce((quantity,item)=>quantity+item.quantity,0)
 
   return (
     <Paper
@@ -91,12 +290,14 @@ const OrderSummary=({items,subtotal,onContinue,buttonLabel,isSubmitting})=>{
                 {item.product.title}
               </Typography>
               <Typography sx={{mt:.35,fontSize:11,color:'#817475'}}>
-                {`${item.quantity} × ${formatPrice(item.product.price)} ج.م`}
+                {hidePrices?`الكمية: ${item.quantity}`:`${item.quantity} × ${formatPrice(item.product.price)} ج.م`}
               </Typography>
             </Stack>
-            <Typography dir="ltr" sx={{flexShrink:0,fontSize:12,fontWeight:800,color:'#3b3031'}}>
-              {`${formatPrice(item.product.price*item.quantity)} ج.م`}
-            </Typography>
+            {!hidePrices && (
+              <Typography dir="ltr" sx={{flexShrink:0,fontSize:12,fontWeight:800,color:'#3b3031'}}>
+                {`${formatPrice(item.product.price*item.quantity)} ج.م`}
+              </Typography>
+            )}
           </Stack>
         ))}
         {!items.length && (
@@ -108,18 +309,28 @@ const OrderSummary=({items,subtotal,onContinue,buttonLabel,isSubmitting})=>{
 
       <Box sx={{height:1,bgcolor:'#f0e5e5',my:2}} />
       <Stack spacing={1.2}>
-        <SummaryRow label="المجموع الفرعي" value={`${formatPrice(subtotal)} ج.م`}/>
-        <SummaryRow label="الشحن" value={`${formatPrice(SHIPPING)} ج.م`}/>
-        <SummaryRow label="الضرائب" value={`${formatPrice(TAXES)} ج.م`}/>
+        {hidePrices ? (
+          <SummaryRow label="إجمالي الكمية" value={totalQuantity}/>
+        ) : (
+          <>
+            <SummaryRow label="المجموع الفرعي" value={`${formatPrice(subtotal)} ج.م`}/>
+            <SummaryRow label="الشحن" value={`${formatPrice(SHIPPING)} ج.م`}/>
+            <SummaryRow label="الضرائب" value={`${formatPrice(TAXES)} ج.م`}/>
+          </>
+        )}
         <SummaryRow label="طريقة الدفع" value="الدفع عند الاستلام"/>
       </Stack>
-      <Box sx={{height:1,bgcolor:'#ead9da',my:2}} />
-      <Stack direction="row" justifyContent="space-between" alignItems="center">
-        <Typography sx={{fontSize:15,fontWeight:800,color:'#302526'}}>{'الإجمالي'}</Typography>
-        <Typography dir="ltr" sx={{fontSize:19,fontWeight:900,color:'#c62828'}}>
-          {`${formatPrice(total)} ج.م`}
-        </Typography>
-      </Stack>
+      {!hidePrices && (
+        <>
+          <Box sx={{height:1,bgcolor:'#ead9da',my:2}} />
+          <Stack direction="row" justifyContent="space-between" alignItems="center">
+            <Typography sx={{fontSize:15,fontWeight:800,color:'#302526'}}>{'الإجمالي'}</Typography>
+            <Typography dir="ltr" sx={{fontSize:19,fontWeight:900,color:'#c62828'}}>
+              {`${formatPrice(total)} ج.م`}
+            </Typography>
+          </Stack>
+        </>
+      )}
       <LoadingButton
         fullWidth
         loading={isSubmitting}
@@ -161,6 +372,14 @@ export const Checkout = () => {
   const { register, handleSubmit, reset } = useForm()
   const dispatch=useDispatch()
   const loggedInUser=useSelector(selectLoggedInUser)
+  const isSalesperson=Boolean(loggedInUser?.isSalesperson)
+  const [customerType,setCustomerType]=useState('existing')
+  const [customers,setCustomers]=useState([])
+  const [selectedCustomer,setSelectedCustomer]=useState(null)
+  const [customerSearchInput,setCustomerSearchInput]=useState('')
+  const [customerSearchLoading,setCustomerSearchLoading]=useState(false)
+  const [salesCustomer,setSalesCustomer]=useState(emptySalesCustomer)
+  const [isSavingCustomer,setIsSavingCustomer]=useState(false)
   const addressAddStatus=useSelector(selectAddressAddStatus)
   const navigate=useNavigate()
   const cartItems=useSelector(selectCartItems)
@@ -185,11 +404,50 @@ export const Checkout = () => {
   },[addresses,selectedAddress])
 
   useEffect(()=>{
+    if(!isSalesperson || customerType!=='existing' || !customerSearchInput.trim()){
+      setCustomers([])
+      setCustomerSearchLoading(false)
+      return
+    }
+
+    let active=true
+    const controller=new AbortController()
+    setCustomerSearchLoading(true)
+    const timeout=setTimeout(()=>{
+      getCustomers(customerSearchInput.trim(),controller.signal)
+        .then((results)=>{
+          if(active) setCustomers(results)
+        })
+        .catch(()=>{
+          if(active){
+            setCustomers([])
+            toast.error('تعذر تحميل قائمة العملاء. يرجى المحاولة مرة أخرى.')
+          }
+        })
+        .finally(()=>{
+          if(active) setCustomerSearchLoading(false)
+        })
+    },300)
+
+    return ()=>{
+      active=false
+      clearTimeout(timeout)
+      controller.abort()
+    }
+  },[customerSearchInput,customerType,isSalesperson])
+
+  useEffect(()=>{
     if(currentOrder?._id){
       dispatch(resetCartByUserIdAsync(loggedInUser?._id))
       navigate(`/order-success/${currentOrder._id}`)
     }
   },[currentOrder,dispatch,loggedInUser?._id,navigate])
+
+  useEffect(()=>{
+    if(orderStatus==='rejected'){
+      toast.error('تعذر إنشاء الطلب. يرجى التحقق من البيانات والمحاولة مرة أخرى.')
+    }
+  },[orderStatus])
 
   useEffect(()=>{
     if(cartStatus==='fulfilled' && cartItems.length===0){
@@ -202,7 +460,92 @@ export const Checkout = () => {
     dispatch(addAddressAsync(address))
   }
 
-  const handleCreateOrder=()=>{
+  const handleCustomerTypeChange=(_,nextType)=>{
+    if(!nextType) return
+    setCustomerType(nextType)
+    setSelectedCustomer(null)
+    setCustomerSearchInput('')
+    setCustomers([])
+    setSalesCustomer(emptySalesCustomer())
+  }
+
+  const handleCustomerSearchInputChange=(_,value,reason)=>{
+    setCustomerSearchInput(value)
+    if(reason==='input' || reason==='clear'){
+      setCustomers([])
+      if(selectedCustomer){
+        setSelectedCustomer(null)
+        setSalesCustomer(emptySalesCustomer())
+      }
+    }
+  }
+
+  const handleCustomerSelect=(_,foundCustomer)=>{
+    setSelectedCustomer(foundCustomer || null)
+    setCustomerSearchInput(foundCustomer?.name || '')
+    setSalesCustomer({
+      ...emptySalesCustomer(),
+      ...foundCustomer
+    })
+  }
+
+  const handleCreateOrder=async()=>{
+    if(isSalesperson){
+      if(!salesCustomer.name.trim() || !salesCustomer.phone.trim()){
+        toast.error('أدخل اسم العميل ورقم هاتفه للمتابعة.')
+        return
+      }
+      if(customerType==='existing' && !selectedCustomer?._id){
+        toast.error('ابحث عن العميل واختره من القائمة.')
+        return
+      }
+      if(salesCustomer.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(salesCustomer.email)){
+        toast.error('أدخل بريداً إلكترونياً صالحاً للعميل.')
+        return
+      }
+
+      let orderCustomer=salesCustomer
+      if(customerType==='new'){
+        setIsSavingCustomer(true)
+        try{
+          orderCustomer=await createCustomer(salesCustomer)
+          setSelectedCustomer(orderCustomer)
+          setCustomerSearchInput(orderCustomer.name)
+          setCustomerType('existing')
+          setSalesCustomer({...emptySalesCustomer(),...orderCustomer})
+        }catch(error){
+          toast.error(error?.message || 'تعذر حفظ العميل. يرجى المحاولة مرة أخرى.')
+          setIsSavingCustomer(false)
+          return
+        }
+        setIsSavingCustomer(false)
+      }
+
+      const customerAddress={
+        type:'عميل',
+        customerId:orderCustomer._id,
+        customerName:orderCustomer.name,
+        email:orderCustomer.email || '',
+        phoneNumber:orderCustomer.phone,
+        alternatePhone:orderCustomer.alternatePhone || '',
+        street:orderCustomer.addressDetails || '',
+        city:orderCustomer.region || '',
+        state:orderCustomer.governorate || '',
+        country:'مصر',
+        postalCode:'',
+        customerType:orderCustomer.customerType || '',
+        classification:orderCustomer.classification || ''
+      }
+      dispatch(createOrderAsync({
+        user:loggedInUser._id,
+        item:cartItems,
+        address:customerAddress,
+        paymentMode:'COD',
+        total:orderTotal+SHIPPING+TAXES
+      }))
+      return
+    }
+
     if(!selectedAddress){
       toast.error('يرجى اختيار عنوان الشحن أولاً.')
       return
@@ -277,6 +620,21 @@ export const Checkout = () => {
         >
           <Box sx={{gridArea:'main',minWidth:0,direction:'rtl'}}>
             <Stack spacing={2.25}>
+                    {isSalesperson?(
+                      <SalespersonCustomerSection
+                        customerType={customerType}
+                        onCustomerTypeChange={handleCustomerTypeChange}
+                        customers={customers}
+                        customerSearchLoading={customerSearchLoading}
+                        selectedCustomer={selectedCustomer}
+                        customerSearchInput={customerSearchInput}
+                        onCustomerSearchInputChange={handleCustomerSearchInputChange}
+                        onCustomerSelect={handleCustomerSelect}
+                        customer={salesCustomer}
+                        onCustomerChange={setSalesCustomer}
+                      />
+                    ):(
+                      <>
                     <Paper elevation={0} sx={{p:{xs:2,sm:3},border:'1px solid #f0dedd',borderRadius:2.5,bgcolor:'#fff'}}>
                       <Stack spacing={.5} sx={{mb:2.5}}>
                         <Typography component="h2" sx={{fontSize:20,fontWeight:800,color:'#302526'}}>
@@ -425,6 +783,8 @@ export const Checkout = () => {
                         </Stack>
                       )}
                     </Paper>
+                      </>
+                    )}
             </Stack>
           </Box>
 
@@ -432,8 +792,9 @@ export const Checkout = () => {
             <OrderSummary
               items={cartItems}
               subtotal={orderTotal}
+              hidePrices={isSalesperson}
               buttonLabel="تأكيد الطلب"
-              isSubmitting={orderStatus==='pending'}
+              isSubmitting={orderStatus==='pending' || isSavingCustomer}
               onContinue={handleCreateOrder}
             />
           </Box>
